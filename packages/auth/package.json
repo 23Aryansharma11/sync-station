@@ -1,0 +1,24 @@
+{
+  "name": "@sync-station/auth",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@sync-station/db": "workspace:*",
+    "@sync-station/env": "workspace:*",
+    "better-auth": "catalog:",
+    "dotenv": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@sync-station/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
