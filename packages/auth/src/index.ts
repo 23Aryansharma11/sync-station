@@ -7,7 +7,6 @@ export const auth = betterAuth({
   database: prismaAdapter(prisma, {
     provider: "postgresql",
   }),
-
   trustedOrigins: [env.CORS_ORIGIN],
   emailAndPassword: {
     enabled: true,
@@ -19,5 +18,12 @@ export const auth = betterAuth({
       httpOnly: true,
     },
   },
-  plugins: [],
+  socialProviders: {
+    google: {
+      prompt: "select_account",
+      clientId: env.GOOGLE_CLIENT_ID as string,
+      clientSecret: env.GOOGLE_CLIENT_SECRET as string,
+    }
+  }
+  // plugins: [],
 });
