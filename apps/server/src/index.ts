@@ -3,7 +3,7 @@ import { auth } from "@sync-station/auth";
 import { env } from "@sync-station/env/server";
 import { Elysia } from "elysia";
 
-const app = new Elysia()
+const app = new Elysia({prefix: "/api"})
   .use(
     cors({
       origin: env.CORS_ORIGIN,
@@ -12,7 +12,7 @@ const app = new Elysia()
       credentials: true,
     }),
   )
-  .all("/api/auth/*", async (context) => {
+  .all("/auth/*", async (context) => {
     const { request, status } = context;
     if (["POST", "GET"].includes(request.method)) {
       return auth.handler(request);
@@ -23,3 +23,5 @@ const app = new Elysia()
   .listen(3000, () => {
     console.log("Server is running on http://localhost:3000");
   });
+
+export type TAPP = typeof app;
