@@ -1,16 +1,18 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { MagicCard } from "@/components/ui/magic-card";
-import { authClient } from "@/lib/auth-client";
-import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useTheme } from "@/components/theme-provider";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+
+import { Button } from "@/components/ui/button";
+import { MagicCard } from "@/components/ui/magic-card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+
+import { authClient } from "@/lib/auth-client";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
   beforeLoad: async () => {
     const { data } = await authClient.getSession();
     if (data) {
-      return redirect({
+      throw redirect({
         to: "/dashboard",
         replace: true
       })
