@@ -17,6 +17,7 @@ export const auth = betterAuth({
       secure: true,
       httpOnly: true,
     },
+    cookiePrefix: "sync-station"
   },
   socialProviders: {
     google: {
@@ -24,6 +25,6 @@ export const auth = betterAuth({
       clientId: env.GOOGLE_CLIENT_ID as string,
       clientSecret: env.GOOGLE_CLIENT_SECRET as string,
     }
-  }
+  },
   // plugins: [],
 });

@@ -10,11 +10,11 @@ export default function Header() {
 
   return (
     <>
-      <div className="flex flex-row items-center justify-between px-2 py-2 bg-card ">
+      <div className="flex flex-row items-center justify-between px-4 py-2 bg-card ">
         <nav className="flex gap-4 text-lg">
           {links.map(({ to, label }) => {
             return (
-              <Link key={to} to={to}>
+              <Link key={to} to={to} className="font-bold">
                 {label}
               </Link>
             );

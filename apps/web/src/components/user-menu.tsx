@@ -13,13 +13,14 @@ import { authClient } from "@/lib/auth-client";
 
 import { Button } from "./ui/button";
 import { Skeleton } from "./ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 export default function UserMenu() {
   const navigate = useNavigate();
   const { data: session, isPending } = authClient.useSession();
 
   if (isPending) {
-    return <Skeleton className="h-9 w-24" />;
+    return <Skeleton className="size-9 animate-pulse rounded-full" />;
   }
 
   if (!session) {
@@ -32,10 +33,17 @@ export default function UserMenu() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={<Button variant="outline" />}>
-        {session.user.name}
+      <DropdownMenuTrigger render={<Avatar className="h-9 w-9 ring-2 ring-background hover:ring-accent/50 transition-all cursor-pointer" />}>
+        <AvatarImage
+          src={session.user.image || ""}
+          alt={session.user.name || ""}
+          className="object-cover"
+        />
+        <AvatarFallback className="text-xs font-semibold bg-linear-to-br from-primary/20 to-secondary/20 text-primary-foreground">
+          {session.user.name?.slice(0, 2).toUpperCase()}
+        </AvatarFallback>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="bg-card">
+      <DropdownMenuContent className="bg-card rounded-xl w-40">
         <DropdownMenuGroup>
           <DropdownMenuLabel>My Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
