@@ -5,13 +5,12 @@ import UserMenu from "./user-menu";
 
 export default function Header() {
   const links = [
-    { to: "/", label: "Home" },
-    { to: "/dashboard", label: "Dashboard" },
+    { to: "/", label: "SYNC STATION" },
   ] as const;
 
   return (
-    <div>
-      <div className="flex flex-row items-center justify-between px-2 py-1">
+    <>
+      <div className="flex flex-row items-center justify-between px-2 py-2 bg-card ">
         <nav className="flex gap-4 text-lg">
           {links.map(({ to, label }) => {
             return (
@@ -26,7 +25,6 @@ export default function Header() {
           <UserMenu />
         </div>
       </div>
-      <hr />
-    </div>
+    </>
   );
 }
