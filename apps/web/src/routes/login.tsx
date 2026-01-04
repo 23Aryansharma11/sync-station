@@ -1,10 +1,18 @@
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
-import { env } from "@sync-station/env/web";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/login")({
   component: LoginPage,
+  beforeLoad: async () => {
+    const { data } = await authClient.getSession();
+    if (data) {
+      return redirect({
+        to: "/dashboard",
+        replace: true
+      })
+    }
+  }
 });
 
 function LoginPage() {
