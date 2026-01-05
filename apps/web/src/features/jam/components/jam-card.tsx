@@ -2,6 +2,7 @@ import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface JamCardProps {
     jamId: string;
@@ -13,14 +14,17 @@ interface JamCardProps {
 }
 
 export function JamCard({ jamId, bgImage, name, isActive, description, createdAt }: JamCardProps) {
-    return <Card className="bg-cover bg-center bg-no-repeat size-64 rounded-xl relative"
+    return <Card className={cn("bg-cover bg-center bg-no-repeat size-64 rounded-xl relative border-2 ", {
+        "border-green-500": isActive,
+        "border-red-900": !isActive
+    })}
         style={{
             backgroundImage: `url(${bgImage})`,
             backgroundPosition: 'center',
             backgroundSize: 'cover',
         }}>
         <CardContent
-            className="absolute inset-0 w-full h-full bg-black/60 backdrop-blur-xs text-white p-2 flex flex-col justify-evenly items-center"
+            className="absolute inset-0 w-full h-full bg-black/50 backdrop-blur-xs text-white p-2 flex flex-col justify-evenly items-center"
         >
             <h4 className="font-bold text-2xl">
                 {name}
