@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { JamCard } from "@/features/jam/components/jam-card";
 import { requireAuth } from "@/lib/auth-loader";
+import { CreateJamBtn } from "@/features/jam/components/create-jam-btn";
 
 const jamData = [{
   jamId: "jam-1",
@@ -63,12 +64,7 @@ function RouteComponent() {
             />
           ))
         }
-        <Button variant={"ghost"} className="size-64 rounded-xl border-2 border-foreground flex justify-center items-center text-2xl cursor-not-allowed">
-          <Plus className="w-8" />
-          <span>
-            Create New Room
-          </span>
-        </Button>
+        <CreateJamBtn />
       </div>
     </div>
   );
