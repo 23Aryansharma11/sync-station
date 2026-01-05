@@ -2,6 +2,7 @@ import { Link } from "@tanstack/react-router";
 
 import { ModeToggle } from "./mode-toggle";
 import UserMenu from "./user-menu";
+import { SearchJamInput } from "@/features/jam/components/search-jam-input";
 
 export default function Header() {
   const links = [
@@ -21,6 +22,7 @@ export default function Header() {
           })}
         </nav>
         <div className="flex items-center gap-2">
+          <SearchJamInput />
           <ModeToggle />
           <UserMenu />
         </div>

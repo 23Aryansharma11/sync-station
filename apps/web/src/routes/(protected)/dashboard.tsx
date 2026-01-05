@@ -54,9 +54,9 @@ function RouteComponent() {
         </div>
       </div>
 
-      <div className="w-full flex justify-center lg:justify-start items-center flex-wrap gap-6">
+      <div className="w-full flex justify-center sm:justify-start items-center flex-wrap gap-6">
         {
-          jamData.map(data => ( 
+          jamData.map(data => (
             <JamCard
               key={data.jamId}
               {...data}
@@ -64,7 +64,7 @@ function RouteComponent() {
           ))
         }
         <Button variant={"ghost"} className="size-64 rounded-xl border-2 border-foreground flex justify-center items-center text-2xl cursor-not-allowed">
-          <Plus className="w-8"/>
+          <Plus className="w-8" />
           <span>
             Create New Room
           </span>
