@@ -24,7 +24,7 @@ export const auth = betterAuth({
       prompt: "select_account",
       clientId: env.GOOGLE_CLIENT_ID as string,
       clientSecret: env.GOOGLE_CLIENT_SECRET as string,
-    }
+    },
   },
   // plugins: [],
 });

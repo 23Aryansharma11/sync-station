@@ -5,9 +5,9 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+
   return (
     <section className="">
-     
     </section>
   );
 }

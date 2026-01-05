@@ -1,12 +1,12 @@
 model Jam {
-    id          String @id
-    name       String
+    id          String @id @default(cuid())
+    name        String
     description String
-    bgImage String
+    bgImage     String
 
-    authorId String
-    author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-    createdAt             DateTime  @default(now())
+    authorId  String
+    author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+    createdAt DateTime @default(now())
 
     @@map("jam")
 }

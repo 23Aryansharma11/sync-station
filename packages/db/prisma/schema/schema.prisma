@@ -8,11 +8,3 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
-
-generator prismabox { 
-  provider = "prismabox"
-  typeboxImportDependencyName = "elysia"
-  typeboxImportVariableName = "t"
-  inputModel = true
-  output   = "../generated/prismabox"
-} 
