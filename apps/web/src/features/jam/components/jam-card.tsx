@@ -7,8 +7,8 @@ interface JamCardProps {
     jamId: string;
     bgImage: string;
     name: string;
-    isActive: boolean;
     description: string;
+    isActive: boolean;
     createdAt: Date;
 }
 
