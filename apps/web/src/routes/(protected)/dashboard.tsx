@@ -33,7 +33,7 @@ function RouteComponent() {
   const { session } = Route.useRouteContext();
 
   return (
-    <div className="min-h-screen bg-background/50 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-background/50 p-4 sm:p-6 lg:p-8 w-full flex flex-col items-start overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6 mb-8">
         <div className="flex items-start sm:items-center gap-4 flex-1 min-w-0">
@@ -54,16 +54,16 @@ function RouteComponent() {
         </div>
       </div>
 
-      <div className="w-full flex justify-start items-center gap-4">
+      <div className="w-full flex justify-center lg:justify-start items-center flex-wrap gap-6">
         {
-          jamData.map(data => (
+          jamData.map(data => ( 
             <JamCard
               key={data.jamId}
               {...data}
             />
           ))
         }
-        <Button variant={"ghost"} className="size-72 rounded-xl border-2 border-foreground flex justify-center items-center text-2xl cursor-not-allowed">
+        <Button variant={"ghost"} className="size-64 rounded-xl border-2 border-foreground flex justify-center items-center text-2xl cursor-not-allowed">
           <Plus className="w-8"/>
           <span>
             Create New Room

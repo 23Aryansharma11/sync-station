@@ -13,7 +13,7 @@ interface JamCardProps {
 }
 
 export function JamCard({ jamId, bgImage, name, isActive, description, createdAt }: JamCardProps) {
-    return <Card className="bg-cover bg-center bg-no-repeat size-72 rounded-xl relative"
+    return <Card className="bg-cover bg-center bg-no-repeat size-64 rounded-xl relative"
         style={{
             backgroundImage: `url(${bgImage})`,
             backgroundPosition: 'center',
