@@ -10,8 +10,11 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 
 import "../index.css";
+import type { QueryClient } from "@tanstack/react-query";
 
-export type RouterAppContext = {};
+export type RouterAppContext = {
+	queryClient: QueryClient,
+};
 
 export const Route = createRootRouteWithContext<RouterAppContext>()({
 	component: RootComponent,
@@ -44,7 +47,7 @@ function RootComponent() {
 				disableTransitionOnChange
 				storageKey="vite-ui-theme"
 			>
-				<div className="grid min-h-svh grid-rows-[auto_1fr]">
+				<div className="grid grid-rows-[auto_1fr] min-h-svh">
 					<Header />
 					<Outlet />
 				</div>

@@ -34,6 +34,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { api } from "@/lib/api";
 import { useState } from "react";
 import { useRouter } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { getJamQuery } from "../query/get-jam-query";
 
 const formSchema = z.object({
 	name: z
@@ -67,6 +70,23 @@ const bgImageOptions = [
 ];
 
 export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
+	const queryClient = useQueryClient();
+	const router = useRouter()
+
+	const mutation = useMutation({
+		mutationFn: async (values: z.infer<typeof formSchema>) => {
+			const res = await api.jam.post(values)
+			form.reset()
+			return res.data
+		},
+		onSuccess: () => {
+			queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey })
+			toast.success('Jam created')
+			setOpen(false)
+		},
+		onError: (err) => toast.error(err.message || "Something went wrong try again later")
+	})
+
 	const form = useForm({
 		validators: {
 			onSubmit: formSchema,
@@ -77,17 +97,9 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 			description: "",
 			bgImage: "",
 		},
-		onSubmit: async ({ value }) => {
-			const res = await api.jam.post({ ...value });
-			if (res.status == 200) {
-				alert("Jam created")
-			}
-			setOpen(false)
-			router.invalidate()
-		},
+		onSubmit: ({ value }) => mutation.mutate(value)
 	});
 	const [open, setOpen] = useState(false)
-	const router = useRouter()
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger

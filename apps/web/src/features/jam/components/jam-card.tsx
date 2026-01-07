@@ -5,6 +5,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
 import { useRouter } from "@tanstack/react-router";
+import { getJamQuery } from "../query/get-jam-query";
+import { toast } from "sonner";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface JamCardProps {
 	id: string;
@@ -21,14 +24,20 @@ export function JamCard({
 	description,
 	createdAt,
 }: JamCardProps) {
+
+	const queryClient = useQueryClient()
 	const router = useRouter()
 
-	const deleteJam = async () => {
-		const res = await api.jam({ id }).delete();
-		if (res) {
-			await router.invalidate()
-		}
-	}
+	const deleteMutation = useMutation({
+		mutationFn: () => api.jam({ id }).delete(),
+		onSuccess: () => {
+
+			queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey })
+			toast.success('Jam deleted')
+		},
+		onError: () => toast.error('Delete failed')
+	})
+	const deleteJam = () => deleteMutation.mutate();
 	return (
 		<Card
 			className={cn(

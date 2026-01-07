@@ -5,22 +5,22 @@ import { CreateJamBtn } from "@/features/jam/components/create-jam-btn";
 import { JamCard } from "@/features/jam/components/jam-card";
 import { requireAuth } from "@/lib/auth-loader";
 import { api } from "@/lib/api";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { getJamQuery } from "@/features/jam/query/get-jam-query";
+
+
 
 export const Route = createFileRoute("/(protected)/dashboard")({
 	component: RouteComponent,
 	beforeLoad: requireAuth,
-	loader: async () => {
-		const res = await api.jam.get();
-		if (res.error) {
-			return []
-		}
-		return res.data
+	loader: async ({ context }) => {
+		await context.queryClient.ensureQueryData(getJamQuery);
 	}
 });
 
 function RouteComponent() {
 	const { session } = Route.useRouteContext();
-	const data = Route.useLoaderData()
+	const { data } = useSuspenseQuery(getJamQuery);
 	return (
 		<div className="flex flex-col items-start bg-background/50 p-4 sm:p-6 lg:p-8 w-full min-h-screen overflow-x-hidden">
 			{/* Header */}
@@ -43,10 +43,10 @@ function RouteComponent() {
 				</div>
 			</div>
 			<div className="flex flex-wrap justify-center sm:justify-start items-center gap-6 w-full">
-				{data.map((d) => (
+				{data && data.map((d) => (
 					<JamCard key={d.id} {...d} />
 				))}
-				<CreateJamBtn isAllowed={data.length < 2} />
+				<CreateJamBtn isAllowed={(data ?? []).length < 2 || true} />
 			</div>
 		</div>
 	);

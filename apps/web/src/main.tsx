@@ -3,12 +3,14 @@ import ReactDOM from "react-dom/client";
 
 import Loader from "./components/loader";
 import { routeTree } from "./routeTree.gen";
+import { getRouter } from "./router";
+import { queryClient } from "./lib/query-client";
 
 const router = createRouter({
 	routeTree,
 	defaultPreload: "intent",
 	defaultPendingComponent: () => <Loader />,
-	context: {},
+	context: { queryClient: queryClient },
 });
 
 declare module "@tanstack/react-router" {
@@ -25,5 +27,5 @@ if (!rootElement) {
 
 if (!rootElement.innerHTML) {
 	const root = ReactDOM.createRoot(rootElement);
-	root.render(<RouterProvider router={router} />);
+	root.render(<RouterProvider router={getRouter()} />);
 }
