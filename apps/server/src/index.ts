@@ -8,7 +8,7 @@ const app = new Elysia({ prefix: "/api" })
 	.use(
 		cors({
 			origin: env.CORS_ORIGIN,
-			methods: ["GET", "POST", "OPTIONS"],
+			methods: ["GET", "POST", "OPTIONS", "DELETE", "PATCH"],
 			allowedHeaders: ["Content-Type", "Authorization"],
 			credentials: true,
 		}),

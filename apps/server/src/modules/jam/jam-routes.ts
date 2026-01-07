@@ -10,6 +10,17 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 			return status(401);
 		}
 		const { name, description, bgImage } = body;
+
+		const count = await prisma.jam.count({
+			where: {
+				authorId: session.user.id
+			}
+		})
+
+		if (count >= 2) {
+			return status(403, "Forbidden");
+		}
+
 		const dbRes = await prisma.jam.create({
 			data: {
 				name,
@@ -49,4 +60,19 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 		}
 	})
 	return res;
+}).delete("/:id", async ({ request, status, params: { id } }) => {
+	const session = await auth.api.getSession({ headers: request.headers });
+	if (!session) {
+		return status(401);
+	}
+
+	const res = await prisma.jam.delete({
+		where: {
+			authorId: session.user.id,
+			id
+		}
+	})
+
+	return res.id ? true : false
+
 })

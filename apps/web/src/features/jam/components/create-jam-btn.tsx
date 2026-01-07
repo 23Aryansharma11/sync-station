@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/input-group";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { api } from "@/lib/api";
+import { useState } from "react";
+import { useRouter } from "@tanstack/react-router";
 
 const formSchema = z.object({
 	name: z
@@ -78,11 +80,16 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 		onSubmit: async ({ value }) => {
 			const res = await api.jam.post({ ...value });
 			if (res.status == 200) {
+				alert("Jam created")
 			}
+			setOpen(false)
+			router.invalidate()
 		},
 	});
+	const [open, setOpen] = useState(false)
+	const router = useRouter()
 	return (
-		<Dialog>
+		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger
 				render={
 					<Button
@@ -247,7 +254,7 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 							Cancel
 						</DialogClose>
 						<Button type="submit" className="sm:flex-none md:flex-1 rounded">
-							Search Jams
+							Create Jams
 						</Button>
 					</DialogFooter>
 				</form>
