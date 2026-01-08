@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
+import { Link } from "@tanstack/react-router";
 interface JamCardProps {
 	id: string;
 	bgImage: string;
@@ -19,7 +20,6 @@ export function JamCard({
 	id,
 	bgImage,
 	name,
-	description,
 	createdAt,
 }: JamCardProps) {
 
@@ -69,9 +69,11 @@ export function JamCard({
 				</div>
 
 				<div className="space-y-2">
-					<Button className="rounded-lg w-full font-semibold">
-						Join
-					</Button>
+					<Link to="/jam/join/$jamId" params={{ jamId: id }}>
+						<Button className="rounded-lg w-full font-semibold">
+							Join
+						</Button>
+					</Link>
 
 					<button
 						onClick={deleteJam}

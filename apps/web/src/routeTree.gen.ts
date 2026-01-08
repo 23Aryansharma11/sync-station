@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as protectedDashboardRouteImport } from './routes/(protected)/dashboard'
+import { Route as protectedJamJoinJamIdRouteImport } from './routes/(protected)/jam/join/$jamId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -28,35 +29,49 @@ const protectedDashboardRoute = protectedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const protectedJamJoinJamIdRoute = protectedJamJoinJamIdRouteImport.update({
+  id: '/(protected)/jam/join/$jamId',
+  path: '/jam/join/$jamId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof protectedDashboardRoute
+  '/jam/join/$jamId': typeof protectedJamJoinJamIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/dashboard': typeof protectedDashboardRoute
+  '/jam/join/$jamId': typeof protectedJamJoinJamIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/(protected)/dashboard': typeof protectedDashboardRoute
+  '/(protected)/jam/join/$jamId': typeof protectedJamJoinJamIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/login' | '/dashboard'
+  fullPaths: '/' | '/login' | '/dashboard' | '/jam/join/$jamId'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/login' | '/dashboard'
-  id: '__root__' | '/' | '/login' | '/(protected)/dashboard'
+  to: '/' | '/login' | '/dashboard' | '/jam/join/$jamId'
+  id:
+    | '__root__'
+    | '/'
+    | '/login'
+    | '/(protected)/dashboard'
+    | '/(protected)/jam/join/$jamId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   LoginRoute: typeof LoginRoute
   protectedDashboardRoute: typeof protectedDashboardRoute
+  protectedJamJoinJamIdRoute: typeof protectedJamJoinJamIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -82,6 +97,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof protectedDashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/(protected)/jam/join/$jamId': {
+      id: '/(protected)/jam/join/$jamId'
+      path: '/jam/join/$jamId'
+      fullPath: '/jam/join/$jamId'
+      preLoaderRoute: typeof protectedJamJoinJamIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -89,6 +111,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   LoginRoute: LoginRoute,
   protectedDashboardRoute: protectedDashboardRoute,
+  protectedJamJoinJamIdRoute: protectedJamJoinJamIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
