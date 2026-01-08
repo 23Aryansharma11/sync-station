@@ -83,7 +83,10 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 	const res = await prisma.jam.findMany({
 		where: {
 			author: {
-				email,
+				email: {
+					contains: email,
+					mode: "insensitive"
+				}
 			}
 		},
 		select: {
@@ -92,13 +95,14 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 			name: true,
 			author: {
 				select: {
-					name: true
+					name: true,
+					email: true
 				}
 			}
 		}
 	})
 
-	return res 
+	return res
 }, {
 	query: t.Object({
 		email: t.String()

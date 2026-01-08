@@ -13,10 +13,48 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { api } from "@/lib/api";
+import { useDebounce } from "@/hooks/use-debounce";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { JamListItem } from "./jam-list-item";
+
+export type TDebounceRes = {
+	name: string;
+	bgImage: string;
+	id: string;
+	author: {
+		name: string;
+		email: string
+	};
+}
 
 export function SearchJamInput() {
 	const location = useLocation();
 	const show = location.href == "/dashboard";
+	const [email, setEmail] = useState("");
+	const debouncedEmail = useDebounce(email, 800);
+	const [response, setResponse] = useState<TDebounceRes[]>([])
+
+
+	useEffect(() => {
+		if (!debouncedEmail) return;
+		const fetchJam = async () => {
+			const res = await api.jam.search.get({
+				query: {
+					email: debouncedEmail
+				}
+			})
+			if (res.error) {
+				toast.error("Unable to search")
+				return
+			}
+			const data = res.data;
+			setResponse(data)
+		}
+		fetchJam()
+	}, [debouncedEmail])
+
 	return show ? (
 		<Dialog>
 			<DialogTrigger
@@ -46,12 +84,32 @@ export function SearchJamInput() {
 						</Label>
 						<Input
 							id="host-email"
+							value={email}
+							onChange={(e) => setEmail(e.target.value)}
 							placeholder="johndoe@example.com"
-							className="rounded h-12 font-semibold text-base"
+							className="rounded h-12 font-semibold"
 							autoComplete="email"
 						/>
 					</div>
 				</form>
+
+				<div className="h-20 min-h-28 overflow-x-hidden overflow-y-auto no-scrollbar">
+					{
+						response.length == 0 ?
+							(<div className="flex justify-center items-center w-full h-full">
+								<h3 className="text-sm md:text-base">
+									{debouncedEmail.length === 0 ? "Start typing to search" : "No such session found"}
+								</h3>
+							</div>) :
+							((<div className="space-y-2">
+								{
+									response.map((data, index) => (
+										<JamListItem {...data} key={data.id} />
+									))
+								}
+							</div>))
+					}
+				</div>
 
 				<DialogFooter className="sm:gap-2 pt-4">
 					<DialogClose
@@ -59,13 +117,13 @@ export function SearchJamInput() {
 							<Button
 								type="button"
 								variant="outline"
-								className="flex-1 sm:flex-none rounded"
+								className="sm:flex-none rounded"
 							/>
 						}
 					>
 						Cancel
 					</DialogClose>
-					<Button type="submit" className="flex-1 sm:flex-none rounded">
+					<Button type="submit" className="sm:flex-none rounded">
 						Search Jams
 					</Button>
 				</DialogFooter>
