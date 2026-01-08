@@ -7,7 +7,7 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 	async ({ body, request, status }) => {
 		const session = await auth.api.getSession({ headers: request.headers });
 		if (!session) {
-			return status(401);
+			throw new Error("Unauthorized")
 		}
 		const { name, description, bgImage } = body;
 
@@ -18,7 +18,7 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 		})
 
 		if (count >= 2) {
-			return status(403, "Forbidden");
+			return status(403, { error: "Max 2 jams allowed on free tier" });
 		}
 
 		const dbRes = await prisma.jam.create({
@@ -39,10 +39,10 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 			bgImage: t.String(),
 		}),
 	},
-).get("/", async ({ request, status }) => {
+).get("/", async ({ request }) => {
 	const session = await auth.api.getSession({ headers: request.headers });
 	if (!session) {
-		return status(401);
+		throw new Error("Unauthorized")
 	}
 	const res = await prisma.jam.findMany({
 		where: {
@@ -56,23 +56,21 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 			createdAt: true
 		},
 		orderBy: {
-			createdAt: "asc"
+			createdAt: "desc"
 		}
 	})
 	return res;
 }).delete("/:id", async ({ request, status, params: { id } }) => {
 	const session = await auth.api.getSession({ headers: request.headers });
 	if (!session) {
-		return status(401);
+		throw new Error("Unauthorized");
 	}
 
-	const res = await prisma.jam.delete({
-		where: {
-			authorId: session.user.id,
-			id
-		}
-	})
+	const jam = await prisma.jam.findUnique({
+		where: { id, authorId: session.user.id }
+	});
+	if (!jam) return status(404, { error: "Jam not found" });
 
-	return res.id ? true : false
-
+	await prisma.jam.delete({ where: { id } });
+	return { success: true };
 })

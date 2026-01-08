@@ -4,23 +4,18 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { CreateJamBtn } from "@/features/jam/components/create-jam-btn";
 import { JamCard } from "@/features/jam/components/jam-card";
 import { requireAuth } from "@/lib/auth-loader";
-import { api } from "@/lib/api";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { getJamQuery } from "@/features/jam/query/get-jam-query";
-
-
+import { useSuspenseQuery } from "@tanstack/react-query";
 
 export const Route = createFileRoute("/(protected)/dashboard")({
 	component: RouteComponent,
 	beforeLoad: requireAuth,
-	loader: async ({ context }) => {
-		await context.queryClient.ensureQueryData(getJamQuery);
-	}
 });
 
 function RouteComponent() {
 	const { session } = Route.useRouteContext();
 	const { data } = useSuspenseQuery(getJamQuery);
+
 	return (
 		<div className="flex flex-col items-start bg-background/50 p-4 sm:p-6 lg:p-8 w-full min-h-screen overflow-x-hidden">
 			{/* Header */}
@@ -46,7 +41,7 @@ function RouteComponent() {
 				{data && data.map((d) => (
 					<JamCard key={d.id} {...d} />
 				))}
-				<CreateJamBtn isAllowed={(data ?? []).length < 2 || true} />
+				<CreateJamBtn isAllowed={data.length < 2} />
 			</div>
 		</div>
 	);

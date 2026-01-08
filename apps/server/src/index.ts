@@ -22,6 +22,12 @@ const app = new Elysia({ prefix: "/api" })
 	})
 	.use(jamRoutes)
 	.get("/", () => "OK")
+	.onError(({ code, error, set }) => {
+		if (code === 'VALIDATION') return { error: 'Invalid input' }
+		set.status = 400
+		return { error: error || 'Internal server error',}
+	})
+
 	.listen(3000, () => {
 		console.log("Server is running on http://localhost:3000");
 	});

@@ -31,11 +31,20 @@ export function JamCard({
 	const deleteMutation = useMutation({
 		mutationFn: () => api.jam({ id }).delete(),
 		onSuccess: () => {
-
-			queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey })
+			queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey, refetchType: "all" })
 			toast.success('Jam deleted')
 		},
-		onError: () => toast.error('Delete failed')
+		onError: (error: any) => {
+			if (error?.response?.data?.error) {
+				toast.error(error.response.data.error)
+			} else if (error.status === 403) {
+				toast.error('Permission denied')
+			} else if (error.status === 404) {
+				toast.error('Jam not found')
+			} else {
+				toast.error('Delete failed')
+			}
+		}
 	})
 	const deleteJam = () => deleteMutation.mutate();
 	return (
@@ -74,7 +83,13 @@ export function JamCard({
 						variant={"destructive"}
 						className="rounded w-full font-bold text-xl"
 					>
-						Delete
+						{
+							deleteMutation.isPending ? (
+								<>Deleting..</>
+							) : (
+								"Delete"
+							)
+						}
 					</Button>
 				</div>
 			</CardContent>
