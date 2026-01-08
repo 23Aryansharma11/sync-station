@@ -1,13 +1,12 @@
-import { Clock, Trash } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { api } from "@/lib/api";
-import { getJamQuery } from "../query/get-jam-query";
 import { toast } from "sonner";
+import { Clock } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+
+import { api } from "@/lib/api";
+import { getJamQuery } from "../query/get-jam-query";
 interface JamCardProps {
 	id: string;
 	bgImage: string;

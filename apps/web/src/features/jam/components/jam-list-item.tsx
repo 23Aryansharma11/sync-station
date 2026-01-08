@@ -1,6 +1,7 @@
 import { AtSign } from "lucide-react"
-import type { TDebounceRes } from "./search-jam-input"
 import { Link } from "@tanstack/react-router"
+
+import type { TDebounceRes } from "./search-jam-input"
 
 export function JamListItem(props: TDebounceRes) {
     return <li className="flex justify-start items- gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded w-full hover:scale-[0.98]">

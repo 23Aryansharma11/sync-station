@@ -1,6 +1,7 @@
-import { auth } from "@sync-station/auth";
-import prisma from "@sync-station/db";
 import Elysia, { t } from "elysia";
+
+import prisma from "@sync-station/db";
+import { auth } from "@sync-station/auth";
 
 export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 	"/",
