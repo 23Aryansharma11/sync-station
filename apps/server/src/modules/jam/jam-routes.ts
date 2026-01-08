@@ -73,4 +73,34 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 
 	await prisma.jam.delete({ where: { id } });
 	return { success: true };
+}).get("/search", async ({ request, query }) => {
+	const session = await auth.api.getSession({ headers: request.headers });
+	if (!session) {
+		throw new Error("Unauthorized")
+	}
+	const { email } = query;
+
+	const res = await prisma.jam.findMany({
+		where: {
+			author: {
+				email,
+			}
+		},
+		select: {
+			id: true,
+			bgImage: true,
+			name: true,
+			author: {
+				select: {
+					name: true
+				}
+			}
+		}
+	})
+
+	return res 
+}, {
+	query: t.Object({
+		email: t.String()
+	})
 })
