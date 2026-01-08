@@ -76,8 +76,7 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 	const queryClient = useQueryClient();
 
 	const {
-		latitude,
-		longitude,
+		location,
 		loading,
 		error,
 		permission,
@@ -85,7 +84,7 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 
 	const mutation = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
-			console.log(latitude, longitude)
+			console.log(location?.accuracy)
 			const res = await api.jam.post(values)
 			form.reset()
 			return res.data

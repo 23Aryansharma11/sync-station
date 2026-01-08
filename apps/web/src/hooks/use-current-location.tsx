@@ -1,72 +1,103 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type LocationPermission =
-    | "granted"
-    | "denied"
-    | "prompt"
-    | "unsupported";
+  | "granted"
+  | "denied"
+  | "prompt"
+  | "unsupported";
 
-type LocationState = {
-    latitude: number | null;
-    longitude: number | null;
-    accuracy: number | null;
-    loading: boolean;
-    error: string | null;
-    permission: LocationPermission;
+type LocationData = {
+  latitude: number;
+  longitude: number;
+  accuracy: number;
+};
+
+type UseCurrentLocationReturn = {
+  location: LocationData | null;
+  loading: boolean;
+  error: string | null;
+  permission: LocationPermission;
+  supported: boolean;
+  requestLocation: () => Promise<LocationData | null>;
 };
 
 export function useCurrentLocation(
-    options: PositionOptions = {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 0,
+  options: PositionOptions = {
+    enableHighAccuracy: true,
+    timeout: 10_000,
+    maximumAge: 0,
+  }
+): UseCurrentLocationReturn {
+  const [location, setLocation] = useState<LocationData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [permission, setPermission] =
+    useState<LocationPermission>("prompt");
+
+  const supported =
+    typeof navigator !== "undefined" && !!navigator.geolocation;
+
+  useEffect(() => {
+    if (!supported) {
+      setPermission("unsupported");
+      return;
     }
-): LocationState {
-    const [state, setState] = useState<LocationState>({
-        latitude: null,
-        longitude: null,
-        accuracy: null,
-        loading: true,
-        error: null,
-        permission: "prompt",
+
+    navigator.permissions
+      ?.query({ name: "geolocation" })
+      .then((result) => {
+        setPermission(result.state as LocationPermission);
+      })
+      .catch(() => {
+        setPermission("prompt");
+      });
+  }, [supported]);
+
+  const requestLocation = useCallback(() => {
+    if (!supported) {
+      setPermission("unsupported");
+      setError("Geolocation not supported by this browser");
+      return Promise.resolve(null);
+    }
+
+    setLoading(true);
+    setError(null);
+
+    return new Promise<LocationData | null>((resolve) => {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const data: LocationData = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+          };
+
+          setLocation(data);
+          setPermission("granted");
+          setLoading(false);
+          resolve(data);
+        },
+        (err) => {
+          setLoading(false);
+          setError(err.message);
+
+          if (err.code === err.PERMISSION_DENIED) {
+            setPermission("denied");
+          }
+
+          resolve(null);
+        },
+        options
+      );
     });
+  }, [supported, options]);
 
-    useEffect(() => {
-        if (!navigator.geolocation) {
-            setState({
-                latitude: null,
-                longitude: null,
-                accuracy: null,
-                loading: false,
-                error: "Geolocation not supported",
-                permission: "unsupported",
-            });
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                setState({
-                    latitude: pos.coords.latitude,
-                    longitude: pos.coords.longitude,
-                    accuracy: pos.coords.accuracy,
-                    loading: false,
-                    error: null,
-                    permission: "granted",
-                });
-            },
-            (err) => {
-                setState((s) => ({
-                    ...s,
-                    loading: false,
-                    error: err.message,
-                    permission:
-                        err.code === err.PERMISSION_DENIED ? "denied" : s.permission,
-                }));
-            },
-            options
-        );
-    }, [options]);
-
-    return state;
+  return {
+    location,
+    loading,
+    error,
+    permission,
+    supported,
+    requestLocation,
+  };
 }
