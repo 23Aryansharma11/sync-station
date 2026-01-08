@@ -39,6 +39,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
+import { useCurrentLocation } from "@/hooks/use-current-location";
 
 const formSchema = z.object({
 	name: z
@@ -74,8 +75,17 @@ const bgImageOptions = [
 export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 	const queryClient = useQueryClient();
 
+	const {
+		latitude,
+		longitude,
+		loading,
+		error,
+		permission,
+	} = useCurrentLocation();
+
 	const mutation = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
+			console.log(latitude, longitude)
 			const res = await api.jam.post(values)
 			form.reset()
 			return res.data
@@ -100,6 +110,9 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 		},
 		onSubmit: ({ value }) => mutation.mutate(value)
 	});
+
+	const showCreateJamForm = !loading && !error && permission === "granted"
+
 	const [open, setOpen] = useState(false)
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
@@ -132,148 +145,176 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 					</DialogDescription>
 				</DialogHeader>
 
-				<form
-					id="create-jam-form"
-					onSubmit={(e) => {
-						e.preventDefault();
-						form.handleSubmit();
-					}}
-					className="space-y-4"
-				>
-					<FieldGroup>
-						<form.Field
-							name="name"
-							children={(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
-								return (
-									<Field data-invalid={isInvalid} className="">
-										<FieldLabel htmlFor={field.name} className="">
-											Name
-										</FieldLabel>
-										<Input
-											className="text-sm md:text-base"
-											id={field.name}
-											name={field.name}
-											value={field.state.value}
-											onBlur={field.handleBlur}
-											onChange={(e) => field.handleChange(e.target.value)}
-											aria-invalid={isInvalid}
-											placeholder="New year party"
-											autoComplete="off"
-										/>
-										{isInvalid && (
-											<FieldError errors={field.state.meta.errors} />
-										)}
-									</Field>
-								);
-							}}
-						/>
+				{
+					loading && (
+						<div>Getting Current Location...</div>
+					)
+				}
 
-						{/* description */}
-						<form.Field
-							name="description"
-							children={(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
+				{
+					permission === "prompt" && (
+						<div>Click allow to create jam session</div>
+					)
+				}
 
-								return (
-									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Description</FieldLabel>
-										<InputGroup>
-											<InputGroupTextarea
+				{
+					permission === "unsupported" && (
+						<div>Your browser doesnt support location sharing, try changing browser</div>
+					)
+				}
+
+				{
+					permission === "denied" && (
+						<div>
+							<p>Location access is required for this feature.</p>
+							<p>Please enable location in your browser settings.</p>
+						</div>
+					)
+				}
+				{
+					showCreateJamForm && <form
+						id="create-jam-form"
+						onSubmit={(e) => {
+							e.preventDefault();
+							form.handleSubmit();
+						}}
+						className="space-y-4"
+					>
+						<FieldGroup>
+							<form.Field
+								name="name"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+									return (
+										<Field data-invalid={isInvalid} className="">
+											<FieldLabel htmlFor={field.name} className="">
+												Name
+											</FieldLabel>
+											<Input
+												className="text-sm md:text-base"
 												id={field.name}
 												name={field.name}
 												value={field.state.value}
 												onBlur={field.handleBlur}
 												onChange={(e) => field.handleChange(e.target.value)}
-												placeholder="New year party at my home"
-												rows={6}
-												className="min-h-24 text-sm md:text-base resize-none"
 												aria-invalid={isInvalid}
+												placeholder="New year party"
+												autoComplete="off"
 											/>
-											<InputGroupAddon align="block-end">
-												<InputGroupText className="tabular-nums">
-													{field.state.value.length}/100 characters
-												</InputGroupText>
-											</InputGroupAddon>
-										</InputGroup>
-										{isInvalid && (
-											<FieldError errors={field.state.meta.errors} />
-										)}
-									</Field>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+										</Field>
+									);
+								}}
+							/>
+
+							{/* description */}
+							<form.Field
+								name="description"
+								children={(field) => {
+									const isInvalid =
+										field.state.meta.isTouched && !field.state.meta.isValid;
+
+									return (
+										<Field data-invalid={isInvalid}>
+											<FieldLabel htmlFor={field.name}>Description</FieldLabel>
+											<InputGroup>
+												<InputGroupTextarea
+													id={field.name}
+													name={field.name}
+													value={field.state.value}
+													onBlur={field.handleBlur}
+													onChange={(e) => field.handleChange(e.target.value)}
+													placeholder="New year party at my home"
+													rows={6}
+													className="min-h-24 text-sm md:text-base resize-none"
+													aria-invalid={isInvalid}
+												/>
+												<InputGroupAddon align="block-end">
+													<InputGroupText className="tabular-nums">
+														{field.state.value.length}/100 characters
+													</InputGroupText>
+												</InputGroupAddon>
+											</InputGroup>
+											{isInvalid && (
+												<FieldError errors={field.state.meta.errors} />
+											)}
+										</Field>
+									);
+								}}
+							/>
+						</FieldGroup>
+
+						{/* Image */}
+						<form.Field
+							name="bgImage"
+							children={(field) => {
+								const isInvalid =
+									field.state.meta.isTouched && !field.state.meta.isValid;
+								return (
+									<FieldSet data-invalid={isInvalid}>
+										<FieldLegend>
+											<FieldTitle>Background Image</FieldTitle>
+											<FieldDescription>
+												Choose a theme for your jam session
+											</FieldDescription>
+										</FieldLegend>
+										<RadioGroup
+											name={field.name}
+											value={field.state.value}
+											onValueChange={(value) =>
+												field.handleChange(value as string)
+											}
+											className="gap-3 grid grid-cols-2 md:grid-cols-4 pt-2"
+										>
+											{bgImageOptions.map((option) => (
+												<Field key={option.src} className="group">
+													<FieldLabel
+														htmlFor={`bg-${option.label}`}
+														className="gap-2 grid data-[state=checked]:bg-primary/10 hover:bg-accent/30 p-1 border-2 border-border data-[state=checked]:border-primary hover:border-border/50 rounded-xl data-[state=checked]:ring-2 data-[state=checked]:ring-ring/20 transition-all cursor-pointer"
+													>
+														<FieldContent>
+															<img
+																src={option.src}
+																alt={option.label}
+																className="rounded-lg w-full size-20 md:size-24 object-center object-cover"
+															/>
+														</FieldContent>
+														<RadioGroupItem
+															id={`bg-${option.label}`}
+															value={option.src}
+															className="sr-only hidden"
+														/>
+													</FieldLabel>
+												</Field>
+											))}
+										</RadioGroup>
+										{isInvalid && <FieldError errors={field.state.meta.errors} />}
+									</FieldSet>
 								);
 							}}
 						/>
-					</FieldGroup>
 
-					{/* Image */}
-					<form.Field
-						name="bgImage"
-						children={(field) => {
-							const isInvalid =
-								field.state.meta.isTouched && !field.state.meta.isValid;
-							return (
-								<FieldSet data-invalid={isInvalid}>
-									<FieldLegend>
-										<FieldTitle>Background Image</FieldTitle>
-										<FieldDescription>
-											Choose a theme for your jam session
-										</FieldDescription>
-									</FieldLegend>
-									<RadioGroup
-										name={field.name}
-										value={field.state.value}
-										onValueChange={(value) =>
-											field.handleChange(value as string)
-										}
-										className="gap-3 grid grid-cols-2 md:grid-cols-4 pt-2"
-									>
-										{bgImageOptions.map((option) => (
-											<Field key={option.src} className="group">
-												<FieldLabel
-													htmlFor={`bg-${option.label}`}
-													className="gap-2 grid data-[state=checked]:bg-primary/10 hover:bg-accent/30 p-1 border-2 border-border data-[state=checked]:border-primary hover:border-border/50 rounded-xl data-[state=checked]:ring-2 data-[state=checked]:ring-ring/20 transition-all cursor-pointer"
-												>
-													<FieldContent>
-														<img
-															src={option.src}
-															alt={option.label}
-															className="rounded-lg w-full size-20 md:size-24 object-center object-cover"
-														/>
-													</FieldContent>
-													<RadioGroupItem
-														id={`bg-${option.label}`}
-														value={option.src}
-														className="sr-only hidden"
-													/>
-												</FieldLabel>
-											</Field>
-										))}
-									</RadioGroup>
-									{isInvalid && <FieldError errors={field.state.meta.errors} />}
-								</FieldSet>
-							);
-						}}
-					/>
-
-					<DialogFooter className="sm:gap-2 pt-4">
-						<DialogClose
-							render={
-								<Button
-									type="button"
-									variant="outline"
-									className="sm:flex-none md:flex-1 rounded"
-								/>
-							}
-						>
-							Cancel
-						</DialogClose>
-						<Button type="submit" className="sm:flex-none md:flex-1 rounded">
-							Create Jams
-						</Button>
-					</DialogFooter>
-				</form>
+						<DialogFooter className="sm:gap-2 pt-4">
+							<DialogClose
+								render={
+									<Button
+										type="button"
+										variant="outline"
+										className="sm:flex-none md:flex-1 rounded"
+									/>
+								}
+							>
+								Cancel
+							</DialogClose>
+							<Button type="submit" className="sm:flex-none md:flex-1 rounded">
+								Create Jams
+							</Button>
+						</DialogFooter>
+					</form>
+				}
 			</DialogContent>
 		</Dialog>
 	);
