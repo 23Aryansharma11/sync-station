@@ -10,7 +10,7 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 		if (!session) {
 			throw new Error("Unauthorized")
 		}
-		const { name, description, bgImage } = body;
+		const { name, description, bgImage, accuracy, latitude, longitude } = body;
 
 		const count = await prisma.jam.count({
 			where: {
@@ -28,6 +28,9 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 				description,
 				bgImage,
 				authorId: session.user.id,
+				latitude,
+				longitude,
+				accuracy
 			},
 		});
 
@@ -38,6 +41,9 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 			name: t.String({ minLength: 3, maxLength: 20 }),
 			description: t.String({ minLength: 3, maxLength: 100 }),
 			bgImage: t.String(),
+			latitude: t.Number(),
+			longitude: t.Number(),
+			accuracy: t.Number(),
 		}),
 	},
 ).get("/", async ({ request }) => {
