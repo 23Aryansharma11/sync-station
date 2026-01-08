@@ -3,7 +3,7 @@ import type { TDebounceRes } from "./search-jam-input"
 import { Link } from "@tanstack/react-router"
 
 export function JamListItem(props: TDebounceRes) {
-    return <li className="flex justify-start items- gap-2 bg-neutral-700 p-2 rounded w-full hover:scale-[0.98]">
+    return <li className="flex justify-start items- gap-2 hover:bg-neutral-100 dark:hover:bg-neutral-700 p-2 rounded w-full hover:scale-[0.98]">
         <img src={props.bgImage} alt="" className="rounded size-20 object-center object-cover" />
         <div className="flex flex-col items-start">
             <p className="font-semibold text-base capitalize">

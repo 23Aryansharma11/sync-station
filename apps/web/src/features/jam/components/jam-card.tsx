@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { api } from "@/lib/api";
-import { useRouter } from "@tanstack/react-router";
 import { getJamQuery } from "../query/get-jam-query";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -26,7 +25,6 @@ export function JamCard({
 }: JamCardProps) {
 
 	const queryClient = useQueryClient()
-	const router = useRouter()
 
 	const deleteMutation = useMutation({
 		mutationFn: () => api.jam({ id }).delete(),
@@ -49,50 +47,44 @@ export function JamCard({
 	const deleteJam = () => deleteMutation.mutate();
 	return (
 		<Card
-			className={cn(
-				"relative bg-cover bg-no-repeat bg-center border-2 rounded-xl size-64",
-			)}
-			style={{
-				backgroundImage: `url(${bgImage})`,
-				backgroundPosition: "center",
-				backgroundSize: "cover",
-			}}
+			className="bg-card shadow-sm hover:shadow-xl border border-border rounded-2xl w-64 h-80 overflow-hidden"
 		>
-			<CardContent className="absolute inset-0 flex flex-col justify-between items-center bg-black/50 backdrop-blur-xs p-2 w-full h-full text-white">
-				<h4 className="font-bold text-2xl">{name}</h4>
-				<p className="block w-full h-20 overflow-hidden text-base text-center line-clamp-3 text-balance leading-5">
-					{description.slice(0, 40)}...
-				</p>
-				<div className="flex justify-center items-center gap-4 w-full">
-					<span className="flex justify-center items-center gap-2">
-						<Clock className="w-4" />
-						<span className="flex justify-center items-center gap-2">
-							{createdAt.toDateString()}
-						</span>
-					</span>
+			<div className="border-b w-full h-36">
+				<img
+					src={bgImage}
+					alt={name}
+					className="w-full h-full object-center object-cover"
+				/>
+			</div>
+			<CardContent className="flex flex-col justify-between p-4 h-[calc(100%-9rem)]">
+				{/* Top */}
+				<div className="space-y-1">
+					<h4 className="font-bold text-lg capitalize line-clamp-1 leading-tight">
+						{name}
+					</h4>
+
+					<div className="flex items-center gap-2 text-muted-foreground text-xs">
+						<Clock className="w-4 h-4" />
+						<span>{createdAt.toDateString()}</span>
+					</div>
 				</div>
-				<div className="flex flex-col justify-center items-center gap-2 px-2 w-full">
-					<Button
-						variant={"default"}
-						className="rounded w-full font-bold text-xl"
-					>
+
+				<div className="space-y-2">
+					<Button className="rounded-lg w-full font-semibold">
 						Join
 					</Button>
-					<Button
+
+					<button
 						onClick={deleteJam}
-						variant={"destructive"}
-						className="rounded w-full font-bold text-xl"
+						disabled={deleteMutation.isPending}
+						className="disabled:opacity-50 w-full font-medium text-destructive text-xs hover:underline transition"
 					>
-						{
-							deleteMutation.isPending ? (
-								<>Deleting..</>
-							) : (
-								"Delete"
-							)
-						}
-					</Button>
+						{deleteMutation.isPending ? "Deleting…" : "Delete"}
+					</button>
 				</div>
 			</CardContent>
 		</Card>
+
+
 	);
 }

@@ -110,7 +110,7 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 				}
 			>
 				<Button variant={"ghost"}
-					className="flex justify-center items-center disabled:opacity-25 border-2 border-foreground rounded-xl size-64 text-2xl cursor-not-allowed disabled:cursor-not-allowed"
+					className="flex justify-center items-center disabled:opacity-25 border-2 border-foreground rounded-xl w-64 h-80 text-2xl cursor-not-allowed disabled:cursor-not-allowed"
 					disabled={!isAllowed}>
 					<Plus className="w-8" />
 					<div

@@ -56,7 +56,12 @@ export function SearchJamInput() {
 	}, [debouncedEmail])
 
 	return show ? (
-		<Dialog>
+		<Dialog onOpenChangeComplete={(open) => {
+			if (!open) {
+				setEmail("")
+				setResponse([])
+			}
+		}}>
 			<DialogTrigger
 				render={
 					<Button
