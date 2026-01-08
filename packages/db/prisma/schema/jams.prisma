@@ -8,5 +8,9 @@ model Jam {
     author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
     createdAt DateTime @default(now())
 
+    latitude  Float
+    longitude Float
+    accuracy  Float?
+
     @@map("jam")
 }
