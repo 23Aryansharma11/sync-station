@@ -1,9 +1,9 @@
 import z from "zod";
 import { toast } from "sonner";
-import { useState } from "react";
-import { Plus } from "lucide-react";
-import { motion } from "motion/react"
+import { motion } from "motion/react";
+import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
+import { Plus, MapPin, RefreshCw } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -44,12 +44,12 @@ import { useCurrentLocation } from "@/hooks/use-current-location";
 const formSchema = z.object({
 	name: z
 		.string()
-		.min(3, "Name must be atleast 3 characters")
-		.max(20, "Name must be atmost 20 characters"),
+		.min(3, "Name must be at least 3 characters")
+		.max(20, "Name must be at most 20 characters"),
 	description: z
 		.string()
-		.min(3, "Description must be atleast 3 characters")
-		.max(100, "Description must be atmost 100 characters"),
+		.min(3, "Description must be at least 3 characters")
+		.max(100, "Description must be at most 100 characters"),
 	bgImage: z.string(),
 });
 
@@ -79,23 +79,42 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 		location,
 		loading,
 		error,
+		supported,
 		permission,
+		requestLocation,
 	} = useCurrentLocation();
+
+	const [open, setOpen] = useState(false);
 
 	const mutation = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
-			console.log(location?.accuracy)
-			const res = await api.jam.post(values)
-			form.reset()
-			return res.data
+			if (!location) {
+				toast.error("Location is required");
+				return;
+			}
+
+			const createJamData = {
+				...values,
+				latitude: location.latitude,
+				longitude: location.longitude,
+				accuracy: location.accuracy,
+			};
+
+			const res = await api.jam.post(createJamData);
+			form.reset();
+			return res.data;
 		},
 		onSuccess: async () => {
-			await queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey, refetchType: "all" })
-			toast.success('Jam created')
-			setOpen(false)
+			await queryClient.invalidateQueries({
+				queryKey: getJamQuery.queryKey,
+				refetchType: "all"
+			});
+			toast.success("Jam created");
+			setOpen(false);
 		},
-		onError: (err) => toast.error(err.message || "Something went wrong try again later")
-	})
+		onError: (err: any) =>
+			toast.error(err.message || "Something went wrong, try again later"),
+	});
 
 	const form = useForm({
 		validators: {
@@ -107,31 +126,39 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 			description: "",
 			bgImage: "",
 		},
-		onSubmit: ({ value }) => mutation.mutate(value)
+		onSubmit: ({ value }) => mutation.mutate(value),
 	});
 
-	const showCreateJamForm = !loading && !error && permission === "granted"
+	// Auto-request location when dialog opens
+	useEffect(() => {
+		if (open && supported && !location && !loading) {
+			requestLocation();
+		}
+	}, [open, supported, location, loading, requestLocation]);
 
-	const [open, setOpen] = useState(false)
+	const hasLocation = !!location;
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
 			<DialogTrigger
 				render={
-					<motion.div whileHover={{
-						scale: 0.98
-					}} />
+					<motion.div whileHover={{ scale: 0.98 }}>
+						<Button
+							variant="ghost"
+							className="flex justify-center items-center disabled:opacity-25 border-2 border-foreground rounded-xl w-64 h-80 text-2xl cursor-not-allowed disabled:cursor-not-allowed"
+							disabled={!isAllowed}
+						>
+							<Plus className="w-8" />
+							<div className="flex flex-col">
+								<span>Create New Room</span>
+								<span className="text-sm">
+									{!isAllowed && "Max 2 rooms allowed for free tier"}
+								</span>
+							</div>
+						</Button>
+					</motion.div>
 				}
 			>
-				<Button variant={"ghost"}
-					className="flex justify-center items-center disabled:opacity-25 border-2 border-foreground rounded-xl w-64 h-80 text-2xl cursor-not-allowed disabled:cursor-not-allowed"
-					disabled={!isAllowed}>
-					<Plus className="w-8" />
-					<div
-						className="flex flex-col">
-						<span>Create New Room</span>
-						<span className="text-sm">{!isAllowed && "Max 2 rooms allowed for free tier"}</span>
-					</div>
-				</Button>
 			</DialogTrigger>
 
 			<DialogContent className="bg-card shadow-2xl backdrop-blur-sm p-6 sm:p-8 border-border/50 rounded w-[95vw] max-w-md sm:max-w-lg">
@@ -144,34 +171,48 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 					</DialogDescription>
 				</DialogHeader>
 
-				{
-					loading && (
-						<div>Getting Current Location...</div>
-					)
-				}
+				{!supported && (
+					<div className="py-8 text-muted-foreground text-center">
+						<p>Your browser does not support location services.</p>
+					</div>
+				)}
 
-				{
-					permission === "prompt" && (
-						<div>Click allow to create jam session</div>
-					)
-				}
+				{supported && !loading && error && (
+					<div className="space-y-2 py-8 text-center">
+						<p className="font-medium text-destructive text-sm">{error}</p>
+						<Button
+							type="button"
+							variant="outline"
+							size="sm"
+							onClick={() => requestLocation()}
+							className="gap-2"
+						>
+							<RefreshCw className="w-4 h-4 animate-spin" />
+							Retry Location
+						</Button>
+					</div>
+				)}
 
-				{
-					permission === "unsupported" && (
-						<div>Your browser doesnt support location sharing, try changing browser</div>
-					)
-				}
+				{supported && loading && (
+					<div className="py-8 text-center">
+						<RefreshCw className="mx-auto mb-2 w-8 h-8 text-muted-foreground animate-spin" />
+						<p className="text-muted-foreground text-sm">Getting your location...</p>
+					</div>
+				)}
 
-				{
+				{supported &&
+					!loading &&
+					!error &&
+					!hasLocation &&
 					permission === "denied" && (
-						<div>
-							<p>Location access is required for this feature.</p>
-							<p>Please enable location in your browser settings.</p>
+						<div className="space-y-2 py-8 text-muted-foreground text-center">
+							<p>Location access is required to create sessions.</p>
+							<p className="text-xs">Please enable location in your browser settings.</p>
 						</div>
-					)
-				}
-				{
-					showCreateJamForm && <form
+					)}
+
+				{hasLocation && (
+					<form
 						id="create-jam-form"
 						onSubmit={(e) => {
 							e.preventDefault();
@@ -179,17 +220,57 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 						}}
 						className="space-y-4"
 					>
+						<FieldSet>
+							<FieldLegend>
+								<FieldTitle className="flex items-center gap-2">
+									<MapPin className="w-4 h-4" />
+									Your Location
+								</FieldTitle>
+								<FieldDescription>
+									{location?.accuracy < 50
+										? "High accuracy"
+										: "Moderate accuracy"
+									}
+								</FieldDescription>
+							</FieldLegend>
+							<div className="space-y-1 bg-muted/50 p-3 rounded-lg text-xs">
+								<div className="flex justify-between">
+									<span>Latitude:</span>
+									<span className="font-mono">
+										{location!.latitude.toFixed(6)}
+									</span>
+								</div>
+								<div className="flex justify-between">
+									<span>Longitude:</span>
+									<span className="font-mono">
+										{location!.longitude.toFixed(6)}
+									</span>
+								</div>
+								<div className="flex justify-between">
+									<span>Accuracy:</span>
+									<span>{location!.accuracy.toFixed(0)}m</span>
+								</div>
+								<Button
+									type="button"
+									variant="ghost"
+									size="sm"
+									className="mt-2 py-1 w-full h-auto text-xs"
+									onClick={() => requestLocation()}
+								>
+									<RefreshCw className="mr-1 w-3 h-3" />
+									Update Location
+								</Button>
+							</div>
+						</FieldSet>
+
 						<FieldGroup>
 							<form.Field
 								name="name"
 								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
+									const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 									return (
-										<Field data-invalid={isInvalid} className="">
-											<FieldLabel htmlFor={field.name} className="">
-												Name
-											</FieldLabel>
+										<Field data-invalid={isInvalid}>
+											<FieldLabel htmlFor={field.name}>Name</FieldLabel>
 											<Input
 												className="text-sm md:text-base"
 												id={field.name}
@@ -201,21 +282,16 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 												placeholder="New year party"
 												autoComplete="off"
 											/>
-											{isInvalid && (
-												<FieldError errors={field.state.meta.errors} />
-											)}
+											{isInvalid && <FieldError errors={field.state.meta.errors} />}
 										</Field>
 									);
 								}}
 							/>
 
-							{/* description */}
 							<form.Field
 								name="description"
 								children={(field) => {
-									const isInvalid =
-										field.state.meta.isTouched && !field.state.meta.isValid;
-
+									const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 									return (
 										<Field data-invalid={isInvalid}>
 											<FieldLabel htmlFor={field.name}>Description</FieldLabel>
@@ -237,35 +313,26 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 													</InputGroupText>
 												</InputGroupAddon>
 											</InputGroup>
-											{isInvalid && (
-												<FieldError errors={field.state.meta.errors} />
-											)}
+											{isInvalid && <FieldError errors={field.state.meta.errors} />}
 										</Field>
 									);
 								}}
 							/>
 						</FieldGroup>
-
-						{/* Image */}
 						<form.Field
 							name="bgImage"
 							children={(field) => {
-								const isInvalid =
-									field.state.meta.isTouched && !field.state.meta.isValid;
+								const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<FieldSet data-invalid={isInvalid}>
 										<FieldLegend>
 											<FieldTitle>Background Image</FieldTitle>
-											<FieldDescription>
-												Choose a theme for your jam session
-											</FieldDescription>
+											<FieldDescription>Choose a theme for your jam session</FieldDescription>
 										</FieldLegend>
 										<RadioGroup
 											name={field.name}
 											value={field.state.value}
-											onValueChange={(value) =>
-												field.handleChange(value as string)
-											}
+											onValueChange={(value) => field.handleChange(value as string)}
 											className="gap-3 grid grid-cols-2 md:grid-cols-4 pt-2"
 										>
 											{bgImageOptions.map((option) => (
@@ -308,12 +375,16 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 							>
 								Cancel
 							</DialogClose>
-							<Button type="submit" className="sm:flex-none md:flex-1 rounded">
-								Create Jams
+							<Button
+								type="submit"
+								className="sm:flex-none md:flex-1 rounded"
+								disabled={mutation.isPending}
+							>
+								{mutation.isPending ? "Creating..." : "Create Jam"}
 							</Button>
 						</DialogFooter>
 					</form>
-				}
+				)}
 			</DialogContent>
 		</Dialog>
 	);

@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
 import { Link } from "@tanstack/react-router";
+
 interface JamCardProps {
 	id: string;
 	bgImage: string;
@@ -56,7 +57,6 @@ export function JamCard({
 				/>
 			</div>
 			<CardContent className="flex flex-col justify-between p-4 h-[calc(100%-9rem)]">
-				{/* Top */}
 				<div className="space-y-1">
 					<h4 className="font-bold text-lg capitalize line-clamp-1 leading-tight">
 						{name}
@@ -85,7 +85,5 @@ export function JamCard({
 				</div>
 			</CardContent>
 		</Card>
-
-
 	);
 }
