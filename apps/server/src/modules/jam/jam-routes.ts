@@ -114,4 +114,17 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
 	query: t.Object({
 		email: t.String()
 	})
+}).get("/:id", async ({ request, params: { id } }) => {
+	const session = await auth.api.getSession({ headers: request.headers });
+	if (!session) {
+		throw new Error("Unauthorized");
+	}
+
+	const jam = await prisma.jam.findUnique({
+		where: {
+			id
+		}
+	})
+
+	return jam
 })
