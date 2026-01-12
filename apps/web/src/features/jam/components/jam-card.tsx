@@ -68,7 +68,7 @@ export function JamCard({
 					</div>
 				</div>
 
-				<div className="space-y-2">
+				<div className="space-y-4">
 					<Link to="/jam/join/$jamId" params={{ jamId: id }}>
 						<Button className="rounded-lg w-full font-semibold">
 							Join

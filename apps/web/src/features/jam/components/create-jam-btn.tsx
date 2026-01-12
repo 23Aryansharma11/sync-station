@@ -39,7 +39,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
-import { useCurrentLocation } from "@/hooks/use-current-location";
 
 const formSchema = z.object({
 	name: z
