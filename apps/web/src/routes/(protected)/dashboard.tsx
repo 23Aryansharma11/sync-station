@@ -15,7 +15,6 @@ export const Route = createFileRoute("/(protected)/dashboard")({
 function RouteComponent() {
 	const { session } = Route.useRouteContext();
 	const { data } = useSuspenseQuery(getJamQuery);
-
 	return (
 		<div className="flex flex-col items-start bg-background/50 p-4 sm:p-6 lg:p-8 w-full min-h-screen overflow-x-hidden">
 			{/* Header */}

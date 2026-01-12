@@ -39,6 +39,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
+import { useGeoLocation } from "@/hooks/use-geo-location";
+
 
 const formSchema = z.object({
 	name: z
@@ -74,13 +76,15 @@ const bgImageOptions = [
 export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 	const queryClient = useQueryClient();
 	const [open, setOpen] = useState(false);
+	const locationData = useGeoLocation();
 
 	const mutation = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
+			if (!locationData.lat || !locationData.lon) { return }
 			const createJamData = {
 				...values,
-				latitude: 120,
-				longitude: 120,
+				latitude: locationData.lat,
+				longitude: locationData.lon,
 				accuracy: 120,
 			};
 
