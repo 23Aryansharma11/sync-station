@@ -1,7 +1,10 @@
+import { Button } from "@/components/ui/button";
 import { Status } from "@/features/jam/components/jam-status";
+import { getJamTokenQuery } from "@/features/jam/query/get-jam-token-query";
 import { useGeoLocation } from "@/hooks/use-geo-location";
 import { api } from "@/lib/api";
 import { isWithinDistanceKm } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/(protected)/jam/join/$jamId")({
@@ -15,6 +18,7 @@ export const Route = createFileRoute("/(protected)/jam/join/$jamId")({
 
 function RouteComponent() {
   const locData = useGeoLocation();
+  const { jamId } = Route.useParams()
   const jamDetails = Route.useLoaderData();
   if (!jamDetails) return null;
   const hasLocation = !!locData.lat && !!locData.lon && !!jamDetails.latitude && !!jamDetails?.longitude;
@@ -25,9 +29,12 @@ function RouteComponent() {
       jamDetails.longitude,
       locData.lat!,
       locData.lon!,
-      0.5
+      1
     );
 
+  const { data: token, refetch, isFetching } = useQuery(
+    getJamTokenQuery(jamId, locData.lat!, locData.lon!)
+  );
   return (
     <div className="flex justify-center items-center px-4 min-h-[70vh]">
       <div className="shadow-sm p-6 border border-neutral-200 rounded-2xl w-full max-w-md">
@@ -59,13 +66,35 @@ function RouteComponent() {
 
         {/* Success */}
         {jamDetails && hasLocation && isNearby && (
-          <Status
-            title="You're Good to Go"
-            description="You’re near the jam location and can join the session."
-            variant="success"
-          />
-        )}
-      </div>
-    </div>
+          <>
+            <Status
+              title="You're Good to Go"
+              description="You’re near the jam location and can join the session."
+              variant="success"
+            />
+            {
+              !token && <Button className={"w-full mt-4 rounded-md"}
+                onClick={() => refetch()}
+                disabled={isFetching || !locData.lat}
+              >
+                Get token
+              </Button>
+            }
+
+            {
+              token && <Button className={"w-full mt-4 rounded-md"}
+                onClick={() => {
+                  document.cookie = `jamJoinToken=${token}; path=/; max-age=3600; Secure; SameSite=Strict`;
+                }}
+                disabled={isFetching || !locData.lat}
+              >
+                Join Now
+              </Button>
+            }
+          </>
+        )
+        }
+      </div >
+    </div >
   );
 }

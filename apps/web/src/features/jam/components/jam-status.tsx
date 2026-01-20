@@ -21,13 +21,6 @@ export function Status({
     <Card className={`rounded-xl border p-4 ${styles[variant]}`}>
       <h2 className="font-semibold text-lg">{title}</h2>
       <p className="opacity-90 mt-1 text-sm">{description}</p>
-      {variant === "success" &&
-        <Button className="w-full" variant={"secondary"}
-          render={<Link to="/dashboard" />}
-        >
-          Join Jam
-        </Button>
-      }
     </Card>
   );
 }

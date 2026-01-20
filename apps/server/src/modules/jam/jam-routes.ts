@@ -1,39 +1,41 @@
 import Elysia, { t } from "elysia";
+
 import prisma from "@sync-station/db";
 import { auth } from "@sync-station/auth";
 import { isWithinDistanceKm } from "@/lib/utils";
-import { randomId } from "elysia/utils";
 
-export const jamRoutes = new Elysia({ prefix: "/jam" })
-
-/* ---------------- CREATE JAM ---------------- */
-.post(
+export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
   "/",
-  async ({ body, request, set }) => {
+  async ({ body, request, status }) => {
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
-      set.status = 401;
-      return { code: "UNAUTHORIZED", error: "Unauthorized" };
+      throw new Error("Unauthorized")
     }
+    const { name, description, bgImage, accuracy, latitude, longitude } = body;
 
     const count = await prisma.jam.count({
-      where: { authorId: session.user.id },
-    });
+      where: {
+        authorId: session.user.id
+      }
+    })
 
     if (count >= 2) {
-      set.status = 403;
-      return {
-        code: "LIMIT_REACHED",
-        error: "Max 2 jams allowed on free tier",
-      };
+      return status(403, { error: "Max 2 jams allowed on free tier" });
     }
 
-    return prisma.jam.create({
+    const dbRes = await prisma.jam.create({
       data: {
-        ...body,
+        name,
+        description,
+        bgImage,
         authorId: session.user.id,
+        latitude,
+        longitude,
+        accuracy
       },
     });
+
+    return dbRes;
   },
   {
     body: t.Object({
@@ -44,145 +46,114 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
       longitude: t.Number(),
       accuracy: t.Number(),
     }),
-  }
-)
-
-/* ---------------- LIST USER JAMS ---------------- */
-.get("/", async ({ request, set }) => {
+  },
+).get("/", async ({ request }) => {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
-    set.status = 401;
-    return { code: "UNAUTHORIZED", error: "Unauthorized" };
+    throw new Error("Unauthorized")
   }
-
-  return prisma.jam.findMany({
-    where: { authorId: session.user.id },
+  const res = await prisma.jam.findMany({
+    where: {
+      authorId: session.user.id
+    },
     select: {
       id: true,
       bgImage: true,
       name: true,
       description: true,
-      createdAt: true,
+      createdAt: true
     },
-    orderBy: { createdAt: "desc" },
-  });
-})
-
-/* ---------------- DELETE JAM ---------------- */
-.delete("/:id", async ({ request, params: { id }, set }) => {
+    orderBy: {
+      createdAt: "desc"
+    }
+  })
+  return res;
+}).delete("/:id", async ({ request, status, params: { id } }) => {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
-    set.status = 401;
-    return { code: "UNAUTHORIZED", error: "Unauthorized" };
+    throw new Error("Unauthorized");
   }
 
   const jam = await prisma.jam.findUnique({
-    where: { id, authorId: session.user.id },
+    where: { id, authorId: session.user.id }
   });
-
-  if (!jam) {
-    set.status = 404;
-    return { code: "NOT_FOUND", error: "Jam not found" };
-  }
+  if (!jam) return status(404, { error: "Jam not found" });
 
   await prisma.jam.delete({ where: { id } });
   return { success: true };
-})
-
-/* ---------------- SEARCH ---------------- */
-.get(
-  "/search",
-  async ({ request, query, set }) => {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session) {
-      set.status = 401;
-      return { code: "UNAUTHORIZED", error: "Unauthorized" };
-    }
-
-    return prisma.jam.findMany({
-      where: {
-        author: {
-          email: {
-            contains: query.email,
-            mode: "insensitive",
-          },
-        },
-      },
-      select: {
-        id: true,
-        bgImage: true,
-        name: true,
-        author: {
-          select: { name: true, email: true },
-        },
-      },
-    });
-  },
-  {
-    query: t.Object({ email: t.String() }),
-  }
-)
-
-/* ---------------- GET BY ID ---------------- */
-.get("/:id", async ({ request, params: { id }, set }) => {
+}).get("/search", async ({ request, query }) => {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session) {
-    set.status = 401;
-    return { code: "UNAUTHORIZED", error: "Unauthorized" };
+    throw new Error("Unauthorized")
+  }
+  const { email } = query;
+
+  const res = await prisma.jam.findMany({
+    where: {
+      author: {
+        email: {
+          contains: email,
+          mode: "insensitive"
+        }
+      }
+    },
+    select: {
+      id: true,
+      bgImage: true,
+      name: true,
+      author: {
+        select: {
+          name: true,
+          email: true
+        }
+      }
+    }
+  })
+
+  return res
+}, {
+  query: t.Object({
+    email: t.String()
+  })
+}).get("/:id", async ({ request, params: { id } }) => {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    throw new Error("Unauthorized");
   }
 
-  const jam = await prisma.jam.findUnique({ where: { id } });
-  if (!jam) {
-    set.status = 404;
-    return { code: "NOT_FOUND", error: "Jam not found" };
-  }
+  const jam = await prisma.jam.findUnique({
+    where: {
+      id
+    }
+  })
 
-  return jam;
+  return jam
+}).post("/:id/join-token", async ({ request, query, body }) => {
+  const session = await auth.api.getSession({ headers: request.headers });
+  if (!session) {
+    throw new Error("Unauthorized")
+  }
+  const { id } = query;
+  const { lat, lon } = body;
+  const jam = await prisma.jam.findUnique({
+    where: {
+      id
+    },
+    select: {
+      latitude: true,
+      longitude: true
+    }
+  })
+
+  const isNearby = isWithinDistanceKm(jam?.latitude!, jam?.longitude!, lat, lon, 1)
+
+  if (!isNearby) {
+    throw new Error("Too far from the station")
+  }
+  return { token: "cjanj" }
+}, {
+  query: t.Object({ id: t.String() }), body: t.Object({
+    lat: t.Number(),
+    lon: t.Number()
+  })
 })
-
-/* ---------------- JOIN TOKEN ---------------- */
-.post(
-  "/:id/join-token",
-  async ({ request, query, body, set }) => {
-    const session = await auth.api.getSession({ headers: request.headers });
-    if (!session) {
-      set.status = 401;
-      return { code: "UNAUTHORIZED", error: "You must be logged in" };
-    }
-
-    const jam = await prisma.jam.findUnique({
-      where: { id: query.id },
-      select: { latitude: true, longitude: true },
-    });
-
-    if (!jam) {
-      set.status = 404;
-      return { code: "JAM_NOT_FOUND", error: "Jam does not exist" };
-    }
-
-    const isNearby = isWithinDistanceKm(
-      jam.latitude,
-      jam.longitude,
-      body.lat,
-      body.lon,
-      0.5
-    );
-
-    if (!isNearby) {
-      set.status = 403;
-      return {
-        code: "TOO_FAR",
-        error: "You must be within 500 meters",
-      };
-    }
-
-    return randomId();
-  },
-  {
-    query: t.Object({ id: t.String() }),
-    body: t.Object({
-      lat: t.Number(),
-      lon: t.Number(),
-    }),
-  }
-);
