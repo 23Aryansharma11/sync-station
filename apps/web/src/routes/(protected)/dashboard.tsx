@@ -10,6 +10,23 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 export const Route = createFileRoute("/(protected)/dashboard")({
 	component: RouteComponent,
 	beforeLoad: requireAuth,
+	errorComponent: () => (
+		<div className="p-8 text-center">
+			<h2 className="mb-4 font-bold text-destructive text-2xl">
+				Failed to load jams
+			</h2>
+			<p className="mb-6 text-muted-foreground">
+				{`Invalid response: expected jams array`}
+			</p>
+			<button
+				onClick={() => window.location.reload()}
+				className="bg-primary px-6 py-2 rounded-lg text-primary-foreground"
+			>
+				Retry
+			</button>
+		</div>
+	),
+
 });
 
 function RouteComponent() {

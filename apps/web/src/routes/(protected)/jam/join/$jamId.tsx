@@ -30,7 +30,7 @@ function RouteComponent() {
 
   return (
     <div className="flex justify-center items-center px-4 min-h-[70vh]">
-      <div className="bg-white shadow-sm p-6 border border-neutral-200 rounded-2xl w-full max-w-md">
+      <div className="shadow-sm p-6 border border-neutral-200 rounded-2xl w-full max-w-md">
         {!jamDetails && (
           <Status
             title="Invalid Jam"
@@ -60,7 +60,7 @@ function RouteComponent() {
         {/* Success */}
         {jamDetails && hasLocation && isNearby && (
           <Status
-            title="You're Good to Go 🎉"
+            title="You're Good to Go"
             description="You’re near the jam location and can join the session."
             variant="success"
           />

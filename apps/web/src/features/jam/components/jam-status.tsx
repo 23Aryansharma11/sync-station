@@ -1,3 +1,7 @@
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Link } from "@tanstack/react-router";
+
 export function Status({
   title,
   description,
@@ -8,15 +12,22 @@ export function Status({
   variant: "success" | "error" | "warning";
 }) {
   const styles = {
-    success: "border-green-200 bg-green-50 text-green-900",
-    error: "border-red-200 bg-red-50 text-red-900",
-    warning: "border-yellow-200 bg-yellow-50 text-yellow-900",
+    success: "border-green-200",
+    error: "border-red-200",
+    warning: "border-yellow-200",
   };
 
   return (
-    <div className={`rounded-xl border p-4 ${styles[variant]}`}>
+    <Card className={`rounded-xl border p-4 ${styles[variant]}`}>
       <h2 className="font-semibold text-lg">{title}</h2>
       <p className="opacity-90 mt-1 text-sm">{description}</p>
-    </div>
+      {variant === "success" &&
+        <Button className="w-full" variant={"secondary"}
+          render={<Link to="/dashboard" />}
+        >
+          Join Jam
+        </Button>
+      }
+    </Card>
   );
 }
