@@ -5,6 +5,7 @@ export const getJamQuery = queryOptions({
     queryKey: ["jams"],
     queryFn: async () => {
         const res = await api.jam.get();
-        return res.data ??[]
+        console.log(res.data)
+        return res.data ?? []
     }
 })

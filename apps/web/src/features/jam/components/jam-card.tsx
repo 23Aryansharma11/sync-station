@@ -56,7 +56,7 @@ export function JamCard({
 					className="w-full h-full object-center object-cover"
 				/>
 			</div>
-			<CardContent className="flex flex-col justify-between p-4 h-[calc(100%-9rem)]">
+			<CardContent className="flex flex-col justify-between p-4 min-h-[calc(100%-9rem)]">
 				<div className="space-y-1">
 					<h4 className="font-bold text-lg capitalize line-clamp-1 leading-tight">
 						{name}
@@ -68,7 +68,7 @@ export function JamCard({
 					</div>
 				</div>
 
-				<div className="space-y-4">
+				<div className="flex flex-col gap-2">
 					<Link to="/jam/join/$jamId" params={{ jamId: id }}>
 						<Button className="rounded-lg w-full font-semibold">
 							Join
