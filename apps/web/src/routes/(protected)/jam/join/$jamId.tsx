@@ -3,13 +3,15 @@ import { Status } from "@/features/jam/components/jam-status";
 import { getJamTokenQuery } from "@/features/jam/query/get-jam-token-query";
 import { useGeoLocation } from "@/hooks/use-geo-location";
 import { api } from "@/lib/api";
+import { requireAuth } from "@/lib/auth-loader";
 import { isWithinDistanceKm } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/(protected)/jam/join/$jamId")({
   component: RouteComponent,
   loader: async ({ params }) => {
+    await requireAuth()
     const res = await api.jam({ id: params.jamId }).get();
     if (!res.data) throw redirect({ to: "/dashboard", replace: true })
     return res.data;
@@ -17,6 +19,7 @@ export const Route = createFileRoute("/(protected)/jam/join/$jamId")({
 });
 
 function RouteComponent() {
+  const navigate = useNavigate();
   const locData = useGeoLocation();
   const { jamId } = Route.useParams()
   const jamDetails = Route.useLoaderData();
@@ -85,6 +88,7 @@ function RouteComponent() {
               token && <Button className={"w-full mt-4 rounded-md"}
                 onClick={() => {
                   document.cookie = `jamJoinToken=${token}; path=/; max-age=3600; Secure; SameSite=Strict`;
+                  navigate({ to: "/jam/$jamId", params: { jamId } })
                 }}
                 disabled={isFetching || !locData.lat}
               >
