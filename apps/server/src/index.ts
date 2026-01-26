@@ -3,6 +3,7 @@ import { auth } from "@sync-station/auth";
 import { env } from "@sync-station/env/server";
 import { Elysia } from "elysia";
 import { jamRoutes } from "./modules/jam/jam-routes";
+import { wsRoutes } from "./modules/ws/ws-route";
 
 const app = new Elysia({ prefix: "/api" })
 	.use(
@@ -25,8 +26,8 @@ const app = new Elysia({ prefix: "/api" })
 	.onError(({ code, error, set }) => {
 		if (code === 'VALIDATION') return { error: 'Invalid input' }
 		set.status = 400
-		return { error: error || 'Internal server error',}
-	})
+		return { error: error || 'Internal server error', }
+	}).use(wsRoutes)
 
 	.listen(3000, () => {
 		console.log("Server is running on http://localhost:3000");

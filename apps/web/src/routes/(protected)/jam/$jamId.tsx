@@ -21,13 +21,13 @@ const clearCookie = (name: string) => {
 export const Route = createFileRoute('/(protected)/jam/$jamId')({
   component: JamRoom,
   beforeLoad: requireAuth, // Check general login first
-  
+
   // Clean Loader
   loader: async ({ params }) => {
     if (typeof document === "undefined") return null;
 
     const token = getCookie('jamJoinToken');
-    
+
     const redirectToJoin = () => {
       throw redirect({
         to: "/jam/join/$jamId",
@@ -46,9 +46,9 @@ export const Route = createFileRoute('/(protected)/jam/$jamId')({
       redirectToJoin();
     }
 
-    return { 
-      jamId: data?.jamId, 
-      token: token! 
+    return {
+      jamId: data?.jamId,
+      token: token!
     };
   },
 
@@ -80,11 +80,11 @@ function JamRoom() {
 
   return (
     <div className="p-6">
-      <h1 className="font-bold text-2xl">Jam Room: {jamId}</h1>
+      <h1 className="font-bold text-2xl"></h1>
       <p className="text-muted-foreground text-sm">
         Authenticated with token: <code className="bg-neutral-100 p-1 rounded">{token?.slice(0, 10)}...</code>
       </p>
-      
+
       {/* Your Music Player / Chat UI goes here */}
     </div>
   )

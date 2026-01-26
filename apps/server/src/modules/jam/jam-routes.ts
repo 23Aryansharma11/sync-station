@@ -148,7 +148,14 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
       },
       select: {
         latitude: true,
-        longitude: true
+        longitude: true,
+        author: {
+          select: {
+            id: true,
+            name: true,
+            email: true
+          }
+        }
       }
     })
 
@@ -160,7 +167,8 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
 
     const token = await jwt.sign({
       sub: session.user.id,
-      jamId: id
+      jamId: id,
+      name: jam?.author.name
     })
     return { token }
   }, {
