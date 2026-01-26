@@ -1,7 +1,9 @@
 import Elysia, { t } from "elysia";
+import { jwt } from '@elysiajs/jwt';
 
 import prisma from "@sync-station/db";
 import { auth } from "@sync-station/auth";
+import { env } from "@sync-station/env/server";
 import { isWithinDistanceKm } from "@/lib/utils";
 
 export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
@@ -128,32 +130,39 @@ export const jamRoutes = new Elysia({ prefix: "/jam" }).post(
   })
 
   return jam
-}).post("/:id/join-token", async ({ request, query, body }) => {
-  const session = await auth.api.getSession({ headers: request.headers });
-  if (!session) {
-    throw new Error("Unauthorized")
-  }
-  const { id } = query;
-  const { lat, lon } = body;
-  const jam = await prisma.jam.findUnique({
-    where: {
-      id
-    },
-    select: {
-      latitude: true,
-      longitude: true
-    }
-  })
-
-  const isNearby = isWithinDistanceKm(jam?.latitude!, jam?.longitude!, lat, lon, 1)
-
-  if (!isNearby) {
-    throw new Error("Too far from the station")
-  }
-  return { token: "cjanj" }
-}, {
-  query: t.Object({ id: t.String() }), body: t.Object({
-    lat: t.Number(),
-    lon: t.Number()
-  })
 })
+  .use(jwt({ name: "jwt", secret: env.JWT_SECRET }))
+  .post("/:id/join-token", async ({ request, body, jwt, params }) => {
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      throw new Error("Unauthorized")
+    }
+    const { id } = params;
+    const { lat, lon } = body;
+    const jam = await prisma.jam.findUnique({
+      where: {
+        id
+      },
+      select: {
+        latitude: true,
+        longitude: true
+      }
+    })
+
+    const isNearby = isWithinDistanceKm(jam?.latitude!, jam?.longitude!, lat, lon, 1)
+
+    if (!isNearby) {
+      throw new Error("Too far from the station")
+    }
+
+    const token = await jwt.sign({
+      sub: session.user.id,
+      jamId: id
+    })
+    return { token }
+  }, {
+    body: t.Object({
+      lat: t.Number(),
+      lon: t.Number()
+    })
+  })

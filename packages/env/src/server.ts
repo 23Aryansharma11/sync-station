@@ -13,6 +13,7 @@ export const env = createEnv({
 			.default("development"),
 		GOOGLE_CLIENT_ID: z.string(),
 		GOOGLE_CLIENT_SECRET: z.string(),
+		JWT_SECRET: z.string()
 	},
 	runtimeEnv: process.env,
 	emptyStringAsUndefined: true,

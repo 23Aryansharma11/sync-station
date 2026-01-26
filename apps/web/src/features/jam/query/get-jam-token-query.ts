@@ -15,8 +15,7 @@ export const getJamTokenQuery = (id: string, lat: number, lon: number) =>
             const res = await api
                 .jam({ id: jamId })["join-token"]
                 .post(
-                    { lat: latitude, lon: longitude },
-                    { query: { id: jamId } }
+                    { lat: latitude, lon: longitude }
                 );
 
             if (res.status === 200 && res.data?.token) {
