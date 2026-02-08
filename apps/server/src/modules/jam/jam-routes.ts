@@ -168,7 +168,8 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
     const token = await jwt.sign({
       sub: session.user.id,
       jamId: id,
-      name: jam?.author.name
+      name: jam?.author.name,
+      avatar: session.user.image
     })
     return { token }
   }, {
@@ -177,8 +178,6 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
       lon: t.Number()
     })
   })
-  // In your jamRoutes chain
-  // Remove the old .get("/valid-token/:token") and replace with:
 
   .post("/verify-token", async ({ body, jwt }) => {
     const profile = await jwt.verify(body.token);
@@ -192,4 +191,20 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
     body: t.Object({
       token: t.String()
     })
+  })
+  .get("/isAdmin/:jamId", async ({ params, request }) => {
+    const { jamId } = params;
+    const session = await auth.api.getSession({ headers: request.headers });
+    if (!session) {
+      throw new Error("Unauthorized")
+    }
+    const res = await prisma.jam.count({
+      where: {
+        id: jamId,
+        authorId: session.user.id
+      }
+    })
+    return {
+      isAdmin: res === 0 ? false : true
+    }
   })
