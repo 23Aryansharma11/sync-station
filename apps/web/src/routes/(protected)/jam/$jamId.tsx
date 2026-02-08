@@ -12,6 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { isAdminQuery } from "@/features/jam/query/get-is-admin";
 import { AdminPlayer } from "@/features/jam/components/admin-player";
 import { NowPlaying } from "@/features/jam/components/now-playing";
+import { ShareJamBtn } from "@/features/jam/components/share-jam-btn";
 
 const getCookie = (name: string) => {
   if (typeof document === "undefined") return null;
@@ -62,7 +63,7 @@ function JamRoom() {
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      clearCookie('jamJoinToken'); 
+      clearCookie('jamJoinToken');
     };
   }, []);
   const currentSong = queue.length > 0 ? queue[0] : undefined;
@@ -93,16 +94,19 @@ function JamRoom() {
           {session?.user && (
             <AddMusicDrawer jamId={String(jamId)} />
           )}
+
+          {isAdmin && <ShareJamBtn />}
+
         </div>
 
         {isAdmin ? (
-          <AdminPlayer 
-            currentSong={currentSong} 
-            onSongEnd={(link) => removeSong(link)} 
+          <AdminPlayer
+            currentSong={currentSong}
+            onSongEnd={(link) => removeSong(link)}
           />
         ) : (
-          <NowPlaying 
-            currentSong={currentSong} 
+          <NowPlaying
+            currentSong={currentSong}
           />
         )}
 
