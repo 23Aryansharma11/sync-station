@@ -1,16 +1,51 @@
 import { Elysia, t } from "elysia";
 import { jwt } from "@elysiajs/jwt";
 import { env } from "@sync-station/env/server";
-import { redis } from "@/lib/redis"; // <--- Import your client
+import { redis } from "@/lib/redis";
+import { getYoutubeData } from "./lib/get-youtube-data";
+import { normalizeLink } from "./lib/standardize-links";
 
-const SocketSchema = t.Union([
+const ClientMessage = t.Union([
     t.Object({
         type: t.Literal("join"),
         data: t.Object({ joineeId: t.String(), username: t.String(), avatar: t.String() })
     }),
     t.Object({
         type: t.Literal("add-music"),
-        data: t.Object({ ytLink: t.String(), name: t.String(), avatar: t.String() })
+        data: t.Object({
+            ytLink: t.String(),
+            name: t.Optional(t.String()),
+            avatar: t.Optional(t.String()),
+            title: t.Optional(t.String()),
+            thumbnail: t.Optional(t.String()),
+            addedAt: t.Optional(t.Number())
+        })
+    }),
+    t.Object({
+        type: t.Literal("toggle-like"),
+        data: t.Object({ ytLink: t.String(), userId: t.String(), isLiked: t.Boolean() })
+    }),
+    t.Object({
+        type: t.Literal("remove-music"),
+        data: t.Object({ ytLink: t.String() })
+    }),
+]);
+
+const ServerMessage = t.Union([
+    t.Object({
+        type: t.Literal("join"),
+        data: t.Object({ joineeId: t.String(), username: t.String(), avatar: t.String() })
+    }),
+    t.Object({
+        type: t.Literal("add-music"),
+        data: t.Object({
+            ytLink: t.String(),
+            name: t.String(),
+            avatar: t.String(),
+            title: t.String(),
+            thumbnail: t.String(),
+            addedAt: t.Number()
+        })
     }),
     t.Object({
         type: t.Literal("toggle-like"),
@@ -24,15 +59,16 @@ const SocketSchema = t.Union([
                 name: t.String(),
                 avatar: t.String(),
                 likes: t.Number(),
-                likedBy: t.Array(t.String())
+                likedBy: t.Array(t.String()),
+                title: t.String(),
+                thumbnail: t.String(),
+                addedAt: t.Number()
             }))
         })
     }),
     t.Object({
         type: t.Literal("remove-music"),
-        data: t.Object({
-            ytLink: t.String()
-        })
+        data: t.Object({ ytLink: t.String() })
     }),
 ]);
 
@@ -45,12 +81,13 @@ export const wsRoutes = new Elysia()
                 const profile = await jwt.verify(jamJoinToken.value);
                 if (!profile) throw new Error("Invalid Token");
                 if (profile.jamId !== jamId) throw new Error("Room mismatch");
-                return { user: profile };
+                const isAdmin = profile.role === "admin";
+                return { user: profile, isAdmin };
             })
 
             .ws("/", {
-                body: SocketSchema,
-                response: SocketSchema,
+                body: ClientMessage,      
+                response: ServerMessage, 
 
                 async open(ws) {
                     const { jamId } = ws.data.params;
@@ -63,16 +100,25 @@ export const wsRoutes = new Elysia()
                     const queue = [];
 
                     for (const [ytLink, metadataJson] of Object.entries(songsMap)) {
-                        const metadata = JSON.parse(String(metadataJson || ""));
-                        const likedBy = await redis.smembers(`jam:${jamId}:likes:${ytLink}`);
+                        try {
+                            const metadata = JSON.parse(String(metadataJson || "{}"));
+                            const likedBy = await redis.smembers(`jam:${jamId}:likes:${ytLink}`);
 
-                        queue.push({
-                            ...metadata,
-                            ytLink,
-                            likes: likedBy.length,
-                            likedBy: likedBy
-                        });
+                            queue.push({
+                                ytLink,
+                                name: metadata.name || "Unknown",
+                                avatar: metadata.avatar || "",
+                                title: metadata.title || ytLink,
+                                thumbnail: metadata.thumbnail || "",
+                                addedAt: metadata.addedAt || Date.now(),
+                                likes: likedBy.length,
+                                likedBy: likedBy
+                            });
+                        } catch (e) {
+                            console.error(`Failed to parse song ${ytLink}`, e);
+                        }
                     }
+
                     ws.send({
                         type: "initial-queue",
                         data: { queue }
@@ -93,28 +139,40 @@ export const wsRoutes = new Elysia()
                     const { name, avatar, sub: userId } = ws.data.user;
 
                     switch (message.type) {
-                        case "add-music":
-                            const exists = await redis.hexists(`jam:${jamId}:songs`, message.data.ytLink);
+                        case "add-music": {
+                            const cleanLink = normalizeLink(message.data.ytLink);
+                            
+                            const exists = await redis.hexists(`jam:${jamId}:songs`, cleanLink);
                             if (exists) return;
 
-                            await redis.hset(`jam:${jamId}:songs`, message.data.ytLink, JSON.stringify({
+                            const { title, thumbnail } = await getYoutubeData(cleanLink);
+                            const addedAt = Date.now();
+
+                            await redis.hset(`jam:${jamId}:songs`, cleanLink, JSON.stringify({
                                 name: String(name),
                                 avatar: String(avatar),
-                                addedAt: Date.now()
+                                addedAt,
+                                title,
+                                thumbnail
                             }));
 
                             ws.publish(jamId, {
                                 type: "add-music",
                                 data: {
-                                    ytLink: message.data.ytLink,
+                                    ytLink: cleanLink, 
                                     name: String(name),
-                                    avatar: String(avatar)
+                                    avatar: String(avatar),
+                                    title,
+                                    thumbnail,
+                                    addedAt
                                 }
                             });
                             break;
+                        }
 
-                        case "toggle-like":
-                            const key = `jam:${jamId}:likes:${message.data.ytLink}`;
+                        case "toggle-like": {
+                            const cleanLink = normalizeLink(message.data.ytLink);
+                            const key = `jam:${jamId}:likes:${cleanLink}`;
 
                             if (message.data.isLiked) {
                                 await redis.sadd(key, String(userId));
@@ -125,25 +183,29 @@ export const wsRoutes = new Elysia()
                             ws.publish(jamId, {
                                 type: "toggle-like",
                                 data: {
-                                    ytLink: message.data.ytLink,
+                                    ytLink: cleanLink,
                                     userId: String(userId),
                                     isLiked: message.data.isLiked
                                 }
                             });
                             break;
+                        }
 
-                        case "remove-music":
+                        case "remove-music": {
+                            const cleanLink = normalizeLink(message.data.ytLink);
+                            
+                            const exists = await redis.hexists(`jam:${jamId}:songs`, cleanLink);
+                            if (!exists) return;
 
-                            const linkToRemove = message.data.ytLink;
-
-                            await redis.hdel(`jam:${jamId}:songs`, linkToRemove);
-                            await redis.del(`jam:${jamId}:likes:${linkToRemove}`);
+                            await redis.hdel(`jam:${jamId}:songs`, cleanLink);
+                            await redis.del(`jam:${jamId}:likes:${cleanLink}`);
 
                             ws.publish(jamId, {
                                 type: "remove-music",
-                                data: { ytLink: linkToRemove }
+                                data: { ytLink: cleanLink }
                             });
                             break;
+                        }
                     }
                 },
             })

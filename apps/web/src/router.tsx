@@ -7,7 +7,6 @@ export function getRouter() {
   const queryClient = new QueryClient()
   const router = createRouter({
     routeTree,
-    // optionally expose the QueryClient via router context
     context: { queryClient },
     scrollRestoration: true,
     defaultPreload: 'intent',
@@ -16,9 +15,7 @@ export function getRouter() {
   setupRouterSsrQueryIntegration({
     router,
     queryClient,
-    // optional:
     handleRedirects: true,
-    // wrapQueryClient: true,
   })
 
   return router

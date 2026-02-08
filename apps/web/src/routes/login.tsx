@@ -33,7 +33,7 @@ function LoginPage() {
 			callbackURL: window.location.origin,
 			fetchOptions: {
 				onSuccess: (ctx) => {
-					// TODO
+					window.location.href = "/dashboard";
 				},
 			},
 		});

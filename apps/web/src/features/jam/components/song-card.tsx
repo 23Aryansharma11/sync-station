@@ -1,25 +1,17 @@
 import { forwardRef } from "react";
-import { Heart, Music, ExternalLink, User, Trash2 } from "lucide-react"; // Import Trash2
+import { Heart, ExternalLink, User, Trash2, Music } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-export interface Song {
-  id: string; 
-  ytLink: string;
-  name: string;
-  avatar: string;
-  likes: number;
-  likedBy: Set<string>;
-}
+import type { Song } from "@/features/jam/hooks/use-jam-queue"; 
 
 interface SongCardProps {
   song: Song;
   currentUserId: string;
-  isAdmin: boolean; // <--- New Prop
+  isAdmin: boolean;
   onToggleLike: (ytLink: string, isLiked: boolean) => void;
-  onRemove: (ytLink: string) => void; // <--- New Prop
-  style?: React.CSSProperties; 
+  onRemove: (ytLink: string) => void;
+  style?: React.CSSProperties;
 }
 
 export const SongCard = forwardRef<HTMLDivElement, SongCardProps>(
@@ -29,78 +21,85 @@ export const SongCard = forwardRef<HTMLDivElement, SongCardProps>(
 
     return (
       <div ref={ref} style={style} {...props} className="mb-3">
-        <Card className="group bg-background shadow-sm hover:shadow-md border transition-shadow">
-          <CardContent className="p-3">
-            <div className="flex flex-col gap-3">
+        <Card className="group bg-background shadow-sm hover:shadow-md border overflow-hidden transition-shadow">
+          <CardContent className="p-2 sm:p-3">
+            <div className="flex flex-col gap-2 sm:gap-3">
               
               <div className="flex justify-between items-start gap-3">
-                
-                {/* Left Side: Icon & Link */}
                 <div className="flex flex-1 items-start gap-3 min-w-0">
-                  <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-md text-red-600 dark:text-red-400 shrink-0">
-                    <Music className="w-5 h-5" />
+                  <div className="relative bg-muted border rounded-md w-20 sm:w-24 h-12 sm:h-14 overflow-hidden shrink-0">
+                    {song.thumbnail ? (
+                      <img 
+                        src={song.thumbnail} 
+                        alt={song.title} 
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        onError={(e) => {
+                            e.currentTarget.style.display = 'none'; 
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                        }}
+                      />
+                    ) : null}
+                    <div className={`${song.thumbnail ? 'hidden' : 'flex'} h-full w-full items-center justify-center bg-muted text-muted-foreground`}>
+                        <Music className="w-5 h-5" />
+                    </div>
                   </div>
-                  <div className="flex-1 pt-1 min-w-0">
+                  <div className="flex flex-col flex-1 justify-center py-0.5 min-w-0">
                     <a
                       href={song.ytLink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex items-center gap-1 font-medium text-blue-600 dark:text-blue-400 hover:underline truncate"
+                      className="group/link flex items-start gap-1 font-medium text-foreground hover:text-primary text-sm sm:text-base leading-tight transition-colors"
                     >
-                      <span className="truncate">{song.ytLink}</span>
-                      <ExternalLink className="opacity-0 group-hover:opacity-100 w-3 h-3 transition-opacity" />
+                      <span className="line-clamp-2">
+                        {song.title || song.ytLink}
+                      </span>
+                      <ExternalLink className="opacity-0 group-hover/link:opacity-100 mt-0.5 ml-1 w-3 sm:w-3.5 h-3 sm:h-3.5 transition-opacity shrink-0" />
                     </a>
                   </div>
                 </div>
-
-                {/* Right Side: Actions */}
-                <div className="flex items-center gap-1">
-                  
-                  {/* DELETE BUTTON (Admin Only) */}
+                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                   {isAdmin && (
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hover:bg-destructive/10 w-8 h-8 text-muted-foreground hover:text-destructive"
+                      className="hover:bg-destructive/10 w-8 sm:w-9 h-8 sm:h-9 text-muted-foreground hover:text-destructive"
                       onClick={() => onRemove(song.ytLink)}
                       title="Remove Song"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
                     </Button>
                   )}
 
-                  {/* LIKE BUTTON */}
-                  <div className="flex flex-col items-center gap-0.5 ml-1">
+                  <div className="flex flex-col items-center gap-0.5 min-w-[36px]">
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="hover:bg-transparent w-8 h-8"
+                      className="hover:bg-transparent w-8 sm:w-9 h-8 sm:h-9"
                       onClick={() => onToggleLike(song.ytLink, !isLiked)}
                     >
                       <Heart
-                        className={`w-5 h-5 transition-all duration-300 ${
+                        className={`h-5 w-5 transition-all duration-300 sm:h-6 sm:w-6 ${
                           isLiked
-                            ? "fill-red-500 text-red-500 scale-110"
+                            ? "scale-110 fill-red-500 text-red-500"
                             : "text-muted-foreground hover:text-red-400"
                         }`}
                       />
                     </Button>
-                    <span className="font-bold text-[10px] text-muted-foreground">
-                      {song.likes > 0 ? song.likes : ""}
+                    <span className="font-bold text-[10px] text-muted-foreground sm:text-xs">
+                      {song.likes > 0 ? song.likes : "0"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Bottom Row: User Info */}
               <div className="flex items-center gap-2 pt-2 border-border/50 border-t">
-                <Avatar className="w-5 h-5">
+                <Avatar className="w-5 sm:w-6 h-5 sm:h-6">
                   <AvatarImage src={song.avatar} />
-                  <AvatarFallback className="text-[9px]">
+                  <AvatarFallback className="text-[9px] sm:text-[10px]">
                     <User className="w-3 h-3" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-xs sm:text-sm">
                   Added by <span className="font-medium text-foreground">{song.name}</span>
                 </span>
               </div>

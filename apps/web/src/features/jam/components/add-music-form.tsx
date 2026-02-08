@@ -3,10 +3,8 @@ import { useForm } from "@tanstack/react-form"
 import { z } from "zod"
 import { Plus, Music, Loader2 } from "lucide-react"
 
-// Hooks & Types
 import { useJamSocket } from "@/features/jam/hooks/use-jam-socket"
 
-// Shadcn UI Components
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -21,7 +19,6 @@ import {
     DrawerTrigger,
 } from "@/components/ui/drawer"
 
-// --- Zod Schema ---
 const musicSchema = z.object({
     link: z
         .string()
@@ -52,17 +49,12 @@ export function AddMusicDrawer({ jamId }: AddMusicDrawerProps) {
         },
         onSubmit: async ({ value }) => {
             if (!isConnected) return
-
-            // Send WebSocket Message
             sendMessage({
                 type: "add-music",
                 data: {
                     ytLink: value.link,
-                    name: "",  // Not adding this as backend will handle it 
-                    avatar: "" // Not adding this as backend will handle it 
                 },
             })
-
             form.reset()
             setIsOpen(false)
         },
@@ -113,11 +105,6 @@ export function AddMusicDrawer({ jamId }: AddMusicDrawerProps) {
                                                 onChange={(e) => field.handleChange(e.target.value)}
                                             />
                                         </div>
-                                        {/* {field.state.meta.errors ? (
-                                            <p className="px-1 text-destructive text-sm">
-                                                Invalid link
-                                            </p>
-                                        ) : null} */}
                                     </div>
                                 )}
                             />

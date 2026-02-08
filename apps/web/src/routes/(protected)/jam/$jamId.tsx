@@ -1,7 +1,8 @@
+import { useEffect } from "react"; // Import useEffect
 import FlipMove from "react-flip-move";
 import { api } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-loader";
-import { Music, Radio, Wifi, WifiOff } from "lucide-react";
+import { Wifi, WifiOff } from "lucide-react";
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { AddMusicDrawer } from "@/features/jam/components/add-music-form";
 import { authClient } from "@/lib/auth-client";
@@ -9,8 +10,9 @@ import { SongCard } from "@/features/jam/components/song-card";
 import { useJamQueue } from "@/features/jam/hooks/use-jam-queue";
 import { useQuery } from "@tanstack/react-query";
 import { isAdminQuery } from "@/features/jam/query/get-is-admin";
+import { AdminPlayer } from "@/features/jam/components/admin-player";
+import { NowPlaying } from "@/features/jam/components/now-playing";
 
-// --- Cookie Helpers ---
 const getCookie = (name: string) => {
   if (typeof document === "undefined") return null;
   return document.cookie.split('; ').find(row => row.startsWith(`${name}=`))?.split('=')[1];
@@ -22,7 +24,6 @@ const clearCookie = (name: string) => {
   }
 }
 
-// --- Route Definition ---
 export const Route = createFileRoute('/(protected)/jam/$jamId')({
   component: JamRoom,
   beforeLoad: requireAuth,
@@ -48,19 +49,29 @@ export const Route = createFileRoute('/(protected)/jam/$jamId')({
 function JamRoom() {
   const { jamId } = Route.useLoaderData() || { jamId: "" };
   const { data: session } = authClient.useSession();
-
   const currentUserId = session?.user?.id || "anon-user";
-
   const { data: isAdmin } = useQuery(isAdminQuery(String(jamId)))
-
-  // 2. GET REMOVE FUNCTION FROM HOOK
   const { queue, isConnected, toggleLike, removeSong } = useJamQueue(String(jamId), currentUserId);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      clearCookie('jamJoinToken');
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      clearCookie('jamJoinToken'); 
+    };
+  }, []);
+  const currentSong = queue.length > 0 ? queue[0] : undefined;
+  const upcomingQueue = queue.length > 0 ? queue.slice(1) : [];
 
   return (
     <div className="flex flex-col items-center bg-background px-4 py-8 min-h-screen text-foreground">
       <div className="flex flex-col w-full max-w-xl h-full">
 
-        {/* --- Header --- */}
         <div className="flex justify-between items-end mb-8 pb-4 border-b">
           <div>
             <h1 className="font-extrabold text-3xl tracking-tight">Jam Session</h1>
@@ -84,9 +95,22 @@ function JamRoom() {
           )}
         </div>
 
+        {isAdmin ? (
+          <AdminPlayer 
+            currentSong={currentSong} 
+            onSongEnd={(link) => removeSong(link)} 
+          />
+        ) : (
+          <NowPlaying 
+            currentSong={currentSong} 
+          />
+        )}
+
         <div className="flex-1 min-h-[50vh] overflow-y-auto">
-          {queue.length === 0 ? (
-            <EmptyState />
+          {upcomingQueue.length === 0 ? (
+            <div className="flex justify-center items-center border border-dashed rounded-lg h-32 text-muted-foreground text-sm">
+              {currentSong ? "No upcoming songs." : "Add a song to start the party!"}
+            </div>
           ) : (
             <FlipMove
               typeName="div"
@@ -96,7 +120,7 @@ function JamRoom() {
               enterAnimation="accordionVertical"
               leaveAnimation="accordionVertical"
             >
-              {queue.map((song) => (
+              {upcomingQueue.map((song) => (
                 <SongCard
                   key={song.id}
                   song={song}
@@ -110,20 +134,6 @@ function JamRoom() {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-function EmptyState() {
-  return (
-    <div className="flex flex-col justify-center items-center bg-muted/5 border-2 border-muted-foreground/20 border-dashed rounded-xl h-64 text-muted-foreground text-center animate-in duration-300 fade-in zoom-in">
-      <div className="bg-background shadow-sm mb-4 p-4 rounded-full">
-        <Radio className="opacity-50 w-8 h-8 text-primary" />
-      </div>
-      <h3 className="font-semibold text-foreground text-lg">Queue is empty</h3>
-      <p className="max-w-[250px] text-sm">
-        Be the DJ! Add the first song to start the jam session.
-      </p>
     </div>
   );
 }
