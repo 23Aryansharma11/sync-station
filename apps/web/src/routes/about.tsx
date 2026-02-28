@@ -1,17 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import React from 'react'
 import { motion } from 'motion/react'
-import { 
-  Heart, 
-  Code2, 
-  Map, 
-  Zap, 
-  Layers, 
-  Globe, 
-  Github, 
-  Cpu, 
-  Database
-} from 'lucide-react'
+import { Heart } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export const Route = createFileRoute('/about')({
   component: AboutPage,
@@ -109,22 +100,22 @@ function AboutPage() {
         <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
           {[
             { 
-              icon: <Zap className="text-primary" />, 
+              icon: <img src="/bun.svg" alt="Bun logo" className="z-10 relative w-6 h-6" />, 
               title: "Bun & Elysia", 
               desc: "The fastest JavaScript runtime and server framework for real-time WebSockets." 
             },
             { 
-              icon: <Layers className="text-secondary" />, 
+              icon: <img src="/redis.png" alt="Redis logo" className="z-10 relative w-6 h-6" />, 
               title: "Redis", 
               desc: "Edge-based state management for zero-latency queue voting and updates." 
             },
             { 
-              icon: <Code2 className="text-accent" />, 
+              icon: <img src="/elysia.png" alt="Eden logo" className="z-10 relative w-6 h-6" />, 
               title: "Eden Treaty", 
               desc: "Full end-to-end type safety between our server and client interfaces." 
             },
             { 
-              icon: <Database className="text-chart-1" />, 
+              icon: <img src="/prisma.svg" alt="Prisma logo" className="z-10 relative dark:invert w-6 h-6" />, 
               title: "Prisma", 
               desc: "Type-safe schema routing ensuring your station's active state is anchored instantly." 
             }
@@ -133,9 +124,9 @@ function AboutPage() {
               key={i}
               {...fadeIn}
               transition={{ delay: i * 0.1 }}
-              className="bg-card p-6 border border-border hover:border-primary/50 rounded-2xl transition-colors"
+              className="group bg-card hover:bg-muted/30 p-6 border border-border hover:border-primary/50 rounded-2xl transition-all"
             >
-              <div className="flex justify-center items-center bg-muted/50 mb-4 rounded-xl w-12 h-12">
+              <div className={cn("flex justify-center items-center group-hover:bg-background mb-4 border rounded-xl w-12 h-12 transition-colors")}>
                 {tech.icon}
               </div>
               <h4 className="mb-2 font-bold text-lg">{tech.title}</h4>
@@ -146,7 +137,7 @@ function AboutPage() {
       </section>
 
       {/* Footer-lite for About page */}
-      <div className="mx-auto px-4 text-center container">
+      <div className="mx-auto mt-12 px-4 text-center container">
          <p className="font-mono text-muted-foreground text-xs uppercase tracking-widest">
             Handcrafted with precision in 2026
          </p>
