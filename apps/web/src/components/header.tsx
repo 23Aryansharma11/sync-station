@@ -43,10 +43,10 @@ export default function Header() {
 
                 {/* --- ACTIONS SECTION --- */}
                 <div className="flex items-center gap-2 md:gap-4">
-                    {/* Search is usually wide on desktop, compact on mobile */}
+                    {/*
                     <div className="w-full max-w-[120px] sm:max-w-[200px] md:max-w-[250px]">
                         <SearchJamInput />
-                    </div>
+                    </div> */}
                     
                     <div className="flex items-center gap-1 pl-2 md:pl-4 border-border/50 border-l">
                         <ModeToggle />

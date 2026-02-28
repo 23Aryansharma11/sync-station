@@ -42,16 +42,6 @@ function LoginPage() {
             {/* Ambient Background Effects */}
             <div className="top-1/2 left-1/2 absolute bg-primary/10 blur-[120px] rounded-full w-[800px] h-[800px] -translate-x-1/2 -translate-y-1/2 pointer-events-none" />
 
-            {/* Top Logo Area */}
-            <motion.div 
-                initial={{ opacity: 0, y: -20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="top-8 left-8 absolute flex items-center gap-2 text-muted-foreground"
-            >
-                <Radio className="w-5 h-5 text-primary" />
-                <span className="font-black text-lg italic uppercase tracking-tighter">Sync Station</span>
-            </motion.div>
-
             <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
