@@ -9,7 +9,8 @@ import {
   Layers, 
   Globe, 
   Github, 
-  Cpu 
+  Cpu, 
+  Database
 } from 'lucide-react'
 
 export const Route = createFileRoute('/about')({
@@ -114,7 +115,7 @@ function AboutPage() {
             },
             { 
               icon: <Layers className="text-secondary" />, 
-              title: "Upstash Redis", 
+              title: "Redis", 
               desc: "Edge-based state management for zero-latency queue voting and updates." 
             },
             { 
@@ -123,9 +124,9 @@ function AboutPage() {
               desc: "Full end-to-end type safety between our server and client interfaces." 
             },
             { 
-              icon: <Cpu className="text-chart-1" />, 
-              title: "Drizzle ORM", 
-              desc: "Lightweight SQL interactions ensuring your Jam data is persisted instantly." 
+              icon: <Database className="text-chart-1" />, 
+              title: "Prisma", 
+              desc: "Type-safe schema routing ensuring your station's active state is anchored instantly." 
             }
           ].map((tech, i) => (
             <motion.div 

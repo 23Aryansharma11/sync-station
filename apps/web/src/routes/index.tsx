@@ -274,11 +274,6 @@ function HomePage() {
                             <a href="https://github.com/23Aryansharma11/sync-station" target="_blank" rel="noreferrer" className="flex items-center gap-1 hover:text-foreground transition-colors">
                                 <Github className="w-4 h-4" /> GitHub
                             </a>
-                            <a href="#" className="hover:text-foreground transition-colors">Twitter/X</a>
-                            <a href="#" className="hover:text-foreground transition-colors">Privacy</a>
-                        </div>
-                        <div className="bg-muted px-3 py-1 rounded-full font-mono text-muted-foreground text-xs">
-                            BUN_RUNTIME_V1.3.4
                         </div>
                     </div>
                 </div>
