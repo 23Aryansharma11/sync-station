@@ -5,6 +5,7 @@ import prisma from "@sync-station/db";
 import { auth } from "@sync-station/auth";
 import { env } from "@sync-station/env/server";
 import { isWithinDistanceKm } from "@/lib/utils";
+import { redis } from "@/lib/redis"; 
 
 export const jamRoutes = new Elysia({ prefix: "/jam" })
   .post("/", async ({ body, request, status }) => {
@@ -40,7 +41,7 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
   },
     {
       body: t.Object({
-        name: t.String({ minLength: 3, maxLength: 20 }),
+        name: t.String({ minLength: 3, maxLength: 30 }),
         description: t.String({ minLength: 3, maxLength: 100 }),
         bgImage: t.String(),
         latitude: t.Number(),
@@ -142,6 +143,13 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
     }
     const { id } = params;
     const { lat, lon } = body;
+    
+    // UPDATED: Check Hash for blocked user
+    const isBanned = await redis.hexists(`jam:${id}:blocked`, session.user.id);
+    if (isBanned) {
+      throw new Error("ACCESS DENIED: You have been blocked by the Operator.");
+    }
+
     const jam = await prisma.jam.findUnique({
       where: {
         id
@@ -159,7 +167,11 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
       }
     })
 
-    const isNearby = isWithinDistanceKm(jam?.latitude!, jam?.longitude!, lat, lon, 1)
+    if (!jam) {
+      throw new Error("Station not found or has been terminated.");
+    }
+
+    const isNearby = isWithinDistanceKm(jam.latitude, jam.longitude, lat, lon, 1)
 
     if (!isNearby) {
       throw new Error("Too far from the station")
@@ -168,8 +180,9 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
     const token = await jwt.sign({
       sub: session.user.id,
       jamId: id,
-      name: jam?.author.name,
-      avatar: session.user.image
+      name: session.user.name, 
+      avatar: session.user.image,
+      isAdmin: session.user.id === jam.author.id 
     })
     return { token }
   }, {

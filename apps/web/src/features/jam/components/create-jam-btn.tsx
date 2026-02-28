@@ -1,9 +1,9 @@
-import z from "zod";
+import { z } from "zod";
 import { toast } from "sonner";
 import { motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "@tanstack/react-form";
-import { Plus, MapPin, RefreshCw } from "lucide-react";
+import { Plus, Radio, MapPin, Loader2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
@@ -24,54 +24,27 @@ import {
 } from "@/components/ui/dialog";
 import {
 	Field,
-	FieldContent,
-	FieldDescription,
 	FieldError,
 	FieldGroup,
 	FieldLabel,
-	FieldLegend,
-	FieldSet,
-	FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { api } from "@/lib/api";
 import { getJamQuery } from "../query/get-jam-query";
 import { useGeoLocation } from "@/hooks/use-geo-location";
 
-
 const formSchema = z.object({
 	name: z
 		.string()
 		.min(3, "Name must be at least 3 characters")
-		.max(20, "Name must be at most 20 characters"),
+		.max(30, "Name must be at most 30 characters"),
 	description: z
 		.string()
 		.min(3, "Description must be at least 3 characters")
 		.max(100, "Description must be at most 100 characters"),
-	bgImage: z.string(),
 });
-
-const bgImageOptions = [
-	{
-		src: "https://plus.unsplash.com/premium_photo-1683121126477-17ef068309bc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NXx8cGFydHl8ZW58MHx8MHx8fDA%3D",
-		label: "Party",
-	},
-	{
-		src: "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Nnx8d29ya3xlbnwwfHwwfHx8MA%3D%3D",
-		label: "Work",
-	},
-	{
-		src: "https://plus.unsplash.com/premium_photo-1661301057249-bd008eebd06a?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MXx8Z3ltfGVufDB8fDB8fHww",
-		label: "Gym",
-	},
-	{
-		src: "https://images.unsplash.com/photo-1530541930197-ff16ac917b0e?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aGFuZ291dHxlbnwwfHwwfHx8MA%3D%3D",
-		label: "Hangout",
-	},
-];
 
 export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 	const queryClient = useQueryClient();
@@ -80,9 +53,12 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 
 	const mutation = useMutation({
 		mutationFn: async (values: z.infer<typeof formSchema>) => {
-			if (!locationData.lat || !locationData.lon) { return }
+			if (!locationData.lat || !locationData.lon) {
+				return toast.error("Location access required to anchor the station.");
+			}
 			const createJamData = {
 				...values,
+				bgImage: "", // Passed as empty string per requirement
 				latitude: locationData.lat,
 				longitude: locationData.lon,
 				accuracy: 120,
@@ -95,13 +71,13 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 		onSuccess: async () => {
 			await queryClient.invalidateQueries({
 				queryKey: getJamQuery.queryKey,
-				refetchType: "all"
+				refetchType: "all",
 			});
-			toast.success("Jam created");
+			toast.success("Station successfully deployed in your vicinity.");
 			setOpen(false);
 		},
 		onError: (err: any) =>
-			toast.error(err.message || "Something went wrong, try again later"),
+			toast.error(err.message || "Failed to initialize station. Try again."),
 	});
 
 	const form = useForm({
@@ -112,40 +88,53 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 		defaultValues: {
 			name: "",
 			description: "",
-			bgImage: "",
 		},
 		onSubmit: ({ value }) => mutation.mutate(value),
 	});
+
 	return (
 		<Dialog open={open} onOpenChange={setOpen}>
-			<DialogTrigger
-				render={
-					<motion.div whileHover={{ scale: 0.98 }}>
-						<Button
-							variant="ghost"
-							className="flex justify-center items-center disabled:opacity-25 border-2 border-foreground rounded-xl w-64 h-80 text-2xl cursor-not-allowed disabled:cursor-not-allowed"
-							disabled={!isAllowed}
-						>
-							<Plus className="w-8" />
-							<div className="flex flex-col">
-								<span>Create New Room</span>
-								<span className="text-sm">
-									{!isAllowed && "Max 2 rooms allowed for free tier"}
-								</span>
-							</div>
-						</Button>
-					</motion.div>
-				}
+			<DialogTrigger render={<motion.button
+				whileHover={isAllowed ? { scale: 0.98 } : {}}
+				whileTap={isAllowed ? { scale: 0.95 } : {}}
+				disabled={!isAllowed}
+				className={`relative flex flex-col justify-center items-center gap-4 rounded-[2rem] w-full sm:w-64 h-[320px] transition-all border-2 border-dashed ${isAllowed
+						? "border-primary/50 bg-primary/5 hover:bg-primary/10 hover:border-primary cursor-pointer text-primary"
+						: "border-muted bg-muted/10 text-muted-foreground cursor-not-allowed opacity-50"
+					}`}
 			>
+				<div className={`p-4 rounded-full ${isAllowed ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}>
+					<Plus className="w-8 h-8" />
+				</div>
+				<div className="flex flex-col items-center px-4 text-center">
+					<span className="font-black text-foreground text-2xl italic uppercase tracking-tighter">
+						Deploy Station
+					</span>
+					{!isAllowed ? (
+						<span className="bg-destructive/10 mt-2 px-2 py-1 rounded font-mono font-bold text-destructive text-xs">
+							LIMIT: 2 NODES (FREE TIER)
+						</span>
+					) : (
+						<span className="flex items-center gap-1 mt-2 font-mono font-bold text-muted-foreground text-xs uppercase tracking-widest">
+							<MapPin className="w-3 h-3" /> Anchored to location
+						</span>
+					)}
+				</div>
+			</motion.button>}>
+
 			</DialogTrigger>
 
-			<DialogContent className="bg-card shadow-2xl backdrop-blur-sm p-6 sm:p-8 border-border/50 rounded w-[95vw] max-w-md sm:max-w-lg">
-				<DialogHeader>
-					<DialogTitle className="font-bold text-xl sm:text-2xl lg:text-3xl leading-tight">
-						Create Jam Sessions
+			<DialogContent className="bg-card/90 shadow-2xl backdrop-blur-xl p-6 sm:p-8 border border-border/50 rounded-[2rem] w-[95vw] max-w-md sm:max-w-lg">
+				<DialogHeader className="mb-4">
+					<div className="flex justify-center items-center bg-primary shadow-lg shadow-primary/20 mb-4 rounded-2xl w-12 h-12 text-primary-foreground">
+						<Radio className="w-6 h-6 animate-pulse" />
+					</div>
+					<DialogTitle className="font-black text-3xl sm:text-4xl italic uppercase leading-tight tracking-tighter">
+						Initialize Jam
 					</DialogTitle>
-					<DialogDescription className="text-sm sm:text-base leading-relaxed">
-						Sessions are location-bound. Only people near you can join.
+					<DialogDescription className="flex items-center gap-2 mt-2 font-mono text-muted-foreground text-xs uppercase tracking-widest">
+						<span className="flex bg-primary rounded-full w-2 h-2 animate-ping" />
+						Awaiting coordinate lock...
 					</DialogDescription>
 				</DialogHeader>
 
@@ -155,25 +144,27 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 						e.preventDefault();
 						form.handleSubmit();
 					}}
-					className="space-y-4"
+					className="space-y-6"
 				>
-					<FieldGroup>
+					<FieldGroup className="space-y-4">
 						<form.Field
 							name="name"
 							children={(field) => {
 								const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Name</FieldLabel>
+										<FieldLabel htmlFor={field.name} className="font-bold text-sm uppercase tracking-tight">
+											Station Designation
+										</FieldLabel>
 										<Input
-											className="text-sm md:text-base"
+											className="bg-background/50 border-border/50 focus:border-primary rounded-xl focus:ring-primary/20 h-12 text-sm md:text-base transition-all"
 											id={field.name}
 											name={field.name}
 											value={field.state.value}
 											onBlur={field.handleBlur}
 											onChange={(e) => field.handleChange(e.target.value)}
 											aria-invalid={isInvalid}
-											placeholder="New year party"
+											placeholder="e.g., Downtown Cafe Vibes"
 											autoComplete="off"
 										/>
 										{isInvalid && <FieldError errors={field.state.meta.errors} />}
@@ -188,22 +179,24 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 								const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
 								return (
 									<Field data-invalid={isInvalid}>
-										<FieldLabel htmlFor={field.name}>Description</FieldLabel>
-										<InputGroup>
+										<FieldLabel htmlFor={field.name} className="font-bold text-sm uppercase tracking-tight">
+											Vibe Parameters (Description)
+										</FieldLabel>
+										<InputGroup className="bg-background/50 border-border/50 focus-within:border-primary rounded-xl focus-within:ring-1 focus-within:ring-primary/20 overflow-hidden transition-all">
 											<InputGroupTextarea
 												id={field.name}
 												name={field.name}
 												value={field.state.value}
 												onBlur={field.handleBlur}
 												onChange={(e) => field.handleChange(e.target.value)}
-												placeholder="New year party at my home"
-												rows={6}
-												className="min-h-24 text-sm md:text-base resize-none"
+												placeholder="What's the mood for this session?"
+												rows={4}
+												className="bg-transparent border-none focus:ring-0 min-h-[100px] text-sm md:text-base resize-none"
 												aria-invalid={isInvalid}
 											/>
-											<InputGroupAddon align="block-end">
-												<InputGroupText className="tabular-nums">
-													{field.state.value.length}/100 characters
+											<InputGroupAddon align="block-end" className="bg-transparent py-2 border-border/50 border-t">
+												<InputGroupText className="justify-end pr-3 w-full font-mono tabular-nums text-muted-foreground text-xs">
+													{field.state.value.length}/100
 												</InputGroupText>
 											</InputGroupAddon>
 										</InputGroup>
@@ -213,68 +206,29 @@ export function CreateJamBtn({ isAllowed }: { isAllowed: boolean }) {
 							}}
 						/>
 					</FieldGroup>
-					<form.Field
-						name="bgImage"
-						children={(field) => {
-							const isInvalid = field.state.meta.isTouched && !field.state.meta.isValid;
-							return (
-								<FieldSet data-invalid={isInvalid}>
-									<FieldLegend>
-										<FieldTitle>Background Image</FieldTitle>
-										<FieldDescription>Choose a theme for your jam session</FieldDescription>
-									</FieldLegend>
-									<RadioGroup
-										name={field.name}
-										value={field.state.value}
-										onValueChange={(value) => field.handleChange(value as string)}
-										className="gap-3 grid grid-cols-2 md:grid-cols-4 pt-2"
-									>
-										{bgImageOptions.map((option) => (
-											<Field key={option.src} className="group">
-												<FieldLabel
-													htmlFor={`bg-${option.label}`}
-													className="gap-2 grid data-[state=checked]:bg-primary/10 hover:bg-accent/30 p-1 border-2 border-border data-[state=checked]:border-primary hover:border-border/50 rounded-xl data-[state=checked]:ring-2 data-[state=checked]:ring-ring/20 transition-all cursor-pointer"
-												>
-													<FieldContent>
-														<img
-															src={option.src}
-															alt={option.label}
-															className="rounded-lg w-full size-20 md:size-24 object-center object-cover"
-														/>
-													</FieldContent>
-													<RadioGroupItem
-														id={`bg-${option.label}`}
-														value={option.src}
-														className="sr-only hidden"
-													/>
-												</FieldLabel>
-											</Field>
-										))}
-									</RadioGroup>
-									{isInvalid && <FieldError errors={field.state.meta.errors} />}
-								</FieldSet>
-							);
-						}}
-					/>
 
-					<DialogFooter className="sm:gap-2 pt-4">
-						<DialogClose
-							render={
-								<Button
-									type="button"
-									variant="outline"
-									className="sm:flex-none md:flex-1 rounded"
-								/>
-							}
+					<DialogFooter className="gap-3 sm:gap-4 pt-6 border-border/50 border-t">
+						<DialogClose render={<Button
+							type="button"
+							variant="outline"
+							className="sm:flex-none md:flex-1 hover:bg-destructive/10 hover:border-destructive/30 rounded-xl h-12 font-bold hover:text-destructive transition-colors"
 						>
-							Cancel
+							ABORT
+						</Button>}>
+
 						</DialogClose>
 						<Button
 							type="submit"
-							className="sm:flex-none md:flex-1 rounded"
+							className="sm:flex-none md:flex-1 shadow-lg shadow-primary/20 hover:shadow-primary/40 rounded-xl h-12 font-bold text-base active:scale-95 transition-all"
 							disabled={mutation.isPending}
 						>
-							{mutation.isPending ? "Creating..." : "Create Jam"}
+							{mutation.isPending ? (
+								<span className="flex items-center gap-2">
+									<Loader2 className="w-5 h-5 animate-spin" /> ESTABLISHING LINK...
+								</span>
+							) : (
+								"LAUNCH STATION"
+							)}
 						</Button>
 					</DialogFooter>
 				</form>

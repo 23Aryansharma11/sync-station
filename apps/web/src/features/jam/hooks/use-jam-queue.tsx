@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { useJamSocket } from "@/features/jam/hooks/use-jam-socket";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useJamSocket } from "./use-jam-socket";
 
-export interface Song {
+export type Song = {
   id: string;
   ytLink: string;
   name: string;
@@ -11,50 +11,129 @@ export interface Song {
   likes: number;
   likedBy: Set<string>;
   addedAt: number;
-}
-
-const compareSongs = (a: Song, b: Song) => {
-  if (b.likes !== a.likes) return b.likes - a.likes;
-  return a.addedAt - b.addedAt;
 };
 
-const smartSort = (songs: Song[]) => {
-  if (songs.length <= 1) return songs;
-  const [head, ...tail] = songs;
-  tail.sort(compareSongs);
-  return [head, ...tail];
-};
-
-const fullSort = (songs: Song[]) => {
-  return [...songs].sort(compareSongs);
+export type ActiveUser = {
+  id: string;
+  name: string;
+  avatar: string;
 };
 
 export function useJamQueue(jamId: string, currentUserId: string) {
   const { isConnected, lastMessage, sendMessage } = useJamSocket(jamId);
   const [queue, setQueue] = useState<Song[]>([]);
+  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
+  const [bannedUsers, setBannedUsers] = useState<ActiveUser[]>([]);
+  const [sessionEnded, setSessionEnded] = useState(false);
+  const [wasKicked, setWasKicked] = useState(false);
+
+  // --- STICKY PLAYING SONG REF --- //
+  // This securely tracks what is playing to prevent it from being overtaken by likes
+  const playingSongIdRef = useRef<string | null>(null);
+
+  const stableSort = useCallback((unsortedQueue: Song[]) => {
+      if (unsortedQueue.length === 0) {
+          playingSongIdRef.current = null;
+          return [];
+      }
+
+      // 1. Determine normal "highest likes -> oldest time" order
+      const normalSort = [...unsortedQueue].sort((a, b) => b.likes - a.likes || a.addedAt - b.addedAt);
+
+      // 2. If no song is currently locked, lock the top one automatically
+      if (!playingSongIdRef.current) {
+          playingSongIdRef.current = normalSort[0].id;
+          return normalSort;
+      }
+
+      // 3. Find if our locked song is still in the queue
+      const lockedSong = unsortedQueue.find(s => s.id === playingSongIdRef.current);
+
+      // 4. If the locked song was removed (e.g., song ended naturally or admin deleted it),
+      // we release the lock and latch onto the next best song.
+      if (!lockedSong) {
+          playingSongIdRef.current = normalSort[0].id;
+          return normalSort;
+      }
+
+      // 5. If the locked song is still here, pull it out, sort the remaining tracks normally,
+      // and forcefully stick the locked song back at the top.
+      const others = unsortedQueue.filter(s => s.id !== playingSongIdRef.current);
+      others.sort((a, b) => b.likes - a.likes || a.addedAt - b.addedAt);
+
+      return [lockedSong, ...others];
+  }, []);
 
   useEffect(() => {
     if (!lastMessage) return;
 
     switch (lastMessage.type) {
+      case "initial-queue": {
+        const loadedQueue = lastMessage.data.queue.map((s: any) => ({
+          id: s.ytLink,
+          ytLink: s.ytLink,
+          name: s.name,
+          avatar: s.avatar,
+          title: s.title || s.ytLink,    
+          thumbnail: s.thumbnail || "",  
+          likes: s.likes,
+          likedBy: new Set(s.likedBy),
+          addedAt: s.addedAt || Date.now(),
+        }));
+        setQueue(stableSort(loadedQueue));
+        setActiveUsers(lastMessage.data.users || []); 
+        setBannedUsers(lastMessage.data.bannedUsers || []); 
+        break;
+      }
+
+      case "join": {
+        setActiveUsers((prev) => {
+            if (prev.some(u => u.id === lastMessage.data.joineeId)) return prev;
+            return [...prev, { 
+                id: lastMessage.data.joineeId, 
+                name: lastMessage.data.username, 
+                avatar: lastMessage.data.avatar 
+            }];
+        });
+        break;
+      }
+
+      case "leave": {
+        setActiveUsers((prev) => prev.filter(u => u.id !== lastMessage.data.userId));
+        break;
+      }
+
+      case "user-kicked": {
+        const kickedId = lastMessage.data.userId;
+        if (kickedId === currentUserId) {
+            setWasKicked(true); 
+        } else {
+            setActiveUsers((prev) => {
+                const kickedUser = prev.find(u => u.id === kickedId);
+                if (kickedUser) {
+                    setBannedUsers(b => [...b, kickedUser]);
+                }
+                return prev.filter(u => u.id !== kickedId);
+            });
+        }
+        break;
+      }
+
+      case "user-unblocked": {
+        const unblockedId = lastMessage.data.userId;
+        setBannedUsers((prev) => prev.filter(u => u.id !== unblockedId));
+        break;
+      }
+
       case "add-music": {
         const { ytLink, name, avatar, title, thumbnail } = lastMessage.data;
-
         setQueue((prev) => {
           if (prev.some((s) => s.ytLink === ytLink)) return prev;
-
           const newSong: Song = {
-            id: ytLink,
-            ytLink,
-            name,
-            avatar,
-            title: title || ytLink,     
-            thumbnail: thumbnail || "", 
-            likes: 0,
-            likedBy: new Set(),
-            addedAt: Date.now(),
+            id: ytLink, ytLink, name, avatar, title: title || ytLink,     
+            thumbnail: thumbnail || "", likes: 0, likedBy: new Set(), addedAt: Date.now(),
           };
-          return smartSort([...prev, newSong]);
+          return stableSort([...prev, newSong]);
         });
         break;
       }
@@ -68,7 +147,7 @@ export function useJamQueue(jamId: string, currentUserId: string) {
             isLiked ? newLikedBy.add(userId) : newLikedBy.delete(userId);
             return { ...song, likedBy: newLikedBy, likes: newLikedBy.size };
           });
-          return smartSort(updated);
+          return stableSort(updated);
         });
         break;
       }
@@ -77,28 +156,17 @@ export function useJamQueue(jamId: string, currentUserId: string) {
         const linkToRemove = lastMessage.data.ytLink;
         setQueue((prev) => {
           const filtered = prev.filter((song) => song.ytLink !== linkToRemove);
-          return smartSort(filtered);
+          return stableSort(filtered);
         });
         break;
       }
 
-      case "initial-queue": {
-        const loadedQueue = lastMessage.data.queue.map((s: any) => ({
-          id: s.ytLink,
-          ytLink: s.ytLink,
-          name: s.name,
-          avatar: s.avatar,
-          title: s.title || s.ytLink,    
-          thumbnail: s.thumbnail || "",  
-          likes: s.likes,
-          likedBy: new Set(s.likedBy),
-          addedAt: s.addedAt || Date.now(),
-        }));
-        setQueue(fullSort(loadedQueue));
+      case "session-ended": {
+        setSessionEnded(true);
         break;
       }
     }
-  }, [lastMessage]);
+  }, [lastMessage, currentUserId, stableSort]);
 
   const toggleLike = useCallback((ytLink: string, isLiked: boolean) => {
     if (!isConnected) return;
@@ -109,19 +177,34 @@ export function useJamQueue(jamId: string, currentUserId: string) {
         isLiked ? newLikedBy.add(currentUserId) : newLikedBy.delete(currentUserId);
         return { ...song, likedBy: newLikedBy, likes: newLikedBy.size };
       });
-      return smartSort(updated);
+      return stableSort(updated);
     });
     sendMessage({ type: "toggle-like", data: { ytLink, userId: currentUserId, isLiked } });
-  }, [isConnected, sendMessage, currentUserId]);
+  }, [isConnected, sendMessage, currentUserId, stableSort]);
 
   const removeSong = useCallback((ytLink: string) => {
     if (!isConnected) return;
     setQueue((prev) => {
       const filtered = prev.filter((song) => song.ytLink !== ytLink);
-      return smartSort(filtered);
+      return stableSort(filtered);
     });
     sendMessage({ type: "remove-music", data: { ytLink } });
+  }, [isConnected, sendMessage, stableSort]);
+
+  const endSession = useCallback(() => {
+    if (!isConnected) return;
+    sendMessage({ type: "end-session", data: {} });
   }, [isConnected, sendMessage]);
 
-  return { queue, isConnected, toggleLike, removeSong };
+  const kickUser = useCallback((userId: string) => {
+    if (!isConnected) return;
+    sendMessage({ type: "kick-user", data: { userId } });
+  }, [isConnected, sendMessage]);
+
+  const unblockUser = useCallback((userId: string) => {
+    if (!isConnected) return;
+    sendMessage({ type: "unblock-user", data: { userId } });
+  }, [isConnected, sendMessage]);
+
+  return { queue, activeUsers, bannedUsers, isConnected, sessionEnded, wasKicked, toggleLike, removeSong, endSession, kickUser, unblockUser };
 }

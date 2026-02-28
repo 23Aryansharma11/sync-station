@@ -14,14 +14,19 @@ export const getJamTokenQuery = (id: string, lat: number, lon: number) =>
 
             const res = await api
                 .jam({ id: jamId })["join-token"]
-                .post(
-                    { lat: latitude, lon: longitude }
-                );
+                .post({ lat: latitude, lon: longitude });
+
+            // If Elysia returns an error (like our Ban message), throw it!
+            if (res.error) {
+                throw new Error(String(res.error.value || "Connection Failed"));
+            }
 
             if (res.status === 200 && res.data?.token) {
                 return res.data.token;
             }
-            return null
+            
+            return null;
         },
-        enabled: false,
+        enabled: false, 
+        retry: false, // <-- ADD THIS LINE: Fail instantly, no silent retries!
     });

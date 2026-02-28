@@ -1,7 +1,7 @@
 import { forwardRef } from "react";
-import { Heart, ExternalLink, User, Trash2, Music } from "lucide-react";
+import { ExternalLink, Trash2, Music, User, Flame } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import type { Song } from "@/features/jam/hooks/use-jam-queue"; 
 
@@ -20,92 +20,107 @@ export const SongCard = forwardRef<HTMLDivElement, SongCardProps>(
     const isLiked = song.likedBy.has(currentUserId);
 
     return (
-      <div ref={ref} style={style} {...props} className="mb-3">
-        <Card className="group bg-background shadow-sm hover:shadow-md border overflow-hidden transition-shadow">
-          <CardContent className="p-2 sm:p-3">
-            <div className="flex flex-col gap-2 sm:gap-3">
-              
-              <div className="flex justify-between items-start gap-3">
-                <div className="flex flex-1 items-start gap-3 min-w-0">
-                  <div className="relative bg-muted border rounded-md w-20 sm:w-24 h-12 sm:h-14 overflow-hidden shrink-0">
-                    {song.thumbnail ? (
-                      <img 
-                        src={song.thumbnail} 
-                        alt={song.title} 
-                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        onError={(e) => {
-                            e.currentTarget.style.display = 'none'; 
-                            e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                        }}
-                      />
-                    ) : null}
-                    <div className={`${song.thumbnail ? 'hidden' : 'flex'} h-full w-full items-center justify-center bg-muted text-muted-foreground`}>
-                        <Music className="w-5 h-5" />
-                    </div>
-                  </div>
-                  <div className="flex flex-col flex-1 justify-center py-0.5 min-w-0">
-                    <a
-                      href={song.ytLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group/link flex items-start gap-1 font-medium text-foreground hover:text-primary text-sm sm:text-base leading-tight transition-colors"
-                    >
-                      <span className="line-clamp-2">
-                        {song.title || song.ytLink}
-                      </span>
-                      <ExternalLink className="opacity-0 group-hover/link:opacity-100 mt-0.5 ml-1 w-3 sm:w-3.5 h-3 sm:h-3.5 transition-opacity shrink-0" />
-                    </a>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                  {isAdmin && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hover:bg-destructive/10 w-8 sm:w-9 h-8 sm:h-9 text-muted-foreground hover:text-destructive"
-                      onClick={() => onRemove(song.ytLink)}
-                      title="Remove Song"
-                    >
-                      <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
-                    </Button>
-                  )}
+      // The outermost div must receive the ref and style for react-flip-move to work
+      <div ref={ref} style={style} {...props} className="block w-full">
+        <div className="group relative bg-card/40 hover:bg-card/80 backdrop-blur-sm border border-border/50 hover:border-primary/50 rounded-2xl overflow-hidden transition-all duration-300">
+          
+          {/* Subtle gradient hover effect */}
+          <div className="absolute inset-0 bg-linear-to-r from-primary/0 via-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
-                  <div className="flex flex-col items-center gap-0.5 min-w-[36px]">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="hover:bg-transparent w-8 sm:w-9 h-8 sm:h-9"
-                      onClick={() => onToggleLike(song.ytLink, !isLiked)}
-                    >
-                      <Heart
-                        className={`h-5 w-5 transition-all duration-300 sm:h-6 sm:w-6 ${
-                          isLiked
-                            ? "scale-110 fill-red-500 text-red-500"
-                            : "text-muted-foreground hover:text-red-400"
-                        }`}
-                      />
-                    </Button>
-                    <span className="font-bold text-[10px] text-muted-foreground sm:text-xs">
-                      {song.likes > 0 ? song.likes : "0"}
-                    </span>
-                  </div>
-                </div>
+          <div className="relative flex items-center gap-3 sm:gap-4 p-3 sm:p-4">
+            
+            {/* --- THUMBNAIL MODULE --- */}
+            <div className="relative flex justify-center items-center bg-background border border-border/50 rounded-xl w-24 sm:w-32 h-16 sm:h-20 overflow-hidden shrink-0">
+              {song.thumbnail ? (
+                <>
+                  <img 
+                    src={song.thumbnail} 
+                    alt={song.title} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out"
+                    onError={(e) => {
+                        e.currentTarget.style.display = 'none'; 
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                    }}
+                  />
+                  {/* CRT/Scanline Overlay */}
+                  <div className="absolute inset-0 bg-[linear-gradient(to_bottom,transparent_50%,rgba(0,0,0,0.1)_50%)] opacity-20 bg-size-[100%_4px] pointer-events-none" />
+                </>
+              ) : null}
+              <div className={`${song.thumbnail ? 'hidden' : 'flex'} absolute inset-0 items-center justify-center bg-muted text-muted-foreground`}>
+                  <Music className="opacity-50 w-6 h-6" />
               </div>
+            </div>
 
-              <div className="flex items-center gap-2 pt-2 border-border/50 border-t">
-                <Avatar className="w-5 sm:w-6 h-5 sm:h-6">
+            {/* --- TRACK DATA --- */}
+            <div className="flex flex-col flex-1 justify-center py-1 min-w-0">
+              <a
+                href={song.ytLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-start gap-2 mb-2 font-bold text-foreground hover:text-primary text-sm sm:text-base leading-tight transition-colors"
+                title={song.title || song.ytLink}
+              >
+                <span className="uppercase line-clamp-2 tracking-tight">
+                  {song.title || song.ytLink}
+                </span>
+                <ExternalLink className="opacity-0 group-hover:opacity-100 mt-0.5 w-3.5 h-3.5 text-primary transition-opacity shrink-0" />
+              </a>
+
+              {/* Submitter Telemetry */}
+              <div className="flex items-center gap-2 mt-auto">
+                <Avatar className="border border-border/50 w-5 h-5">
                   <AvatarImage src={song.avatar} />
-                  <AvatarFallback className="text-[9px] sm:text-[10px]">
-                    <User className="w-3 h-3" />
+                  <AvatarFallback className="bg-background text-[9px]">
+                    <User className="w-3 h-3 text-muted-foreground" />
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-muted-foreground text-xs sm:text-sm">
-                  Added by <span className="font-medium text-foreground">{song.name}</span>
+                <span className="font-mono text-[10px] text-muted-foreground sm:text-xs uppercase tracking-widest">
+                  REQ BY: <span className="font-bold text-foreground">{song.name}</span>
                 </span>
               </div>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* --- CONTROLS SECTION --- */}
+            <div className="flex items-center gap-2 sm:gap-4 pl-2 sm:pl-4 border-border/50 border-l shrink-0">
+              
+              {/* Upvote / Boost Button */}
+              <div className="flex flex-col justify-center items-center min-w-[40px]">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="group/btn relative hover:bg-transparent w-10 h-10"
+                  onClick={() => onToggleLike(song.ytLink, !isLiked)}
+                >
+                  {/* Replaced generic Heart with a 'Flame' for a more energetic "Boost" feel */}
+                  <Flame
+                    className={`h-6 w-6 transition-all duration-300 ${
+                      isLiked
+                        ? "text-primary fill-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.6)] scale-110"
+                        : "text-muted-foreground group-hover/btn:text-primary/50 group-hover/btn:scale-105"
+                    }`}
+                  />
+                </Button>
+                <span className={`font-mono font-black text-sm transition-colors ${isLiked ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {song.likes > 0 ? song.likes : "0"}
+                </span>
+              </div>
+
+              {/* Admin Override (Delete) */}
+              {isAdmin && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-destructive/10 rounded-xl w-10 h-10 text-muted-foreground hover:text-destructive transition-colors shrink-0"
+                  onClick={() => onRemove(song.ytLink)}
+                  title="Override & Remove"
+                >
+                  <Trash2 className="w-4 sm:w-5 h-4 sm:h-5" />
+                </Button>
+              )}
+            </div>
+
+          </div>
+        </div>
       </div>
     );
   }

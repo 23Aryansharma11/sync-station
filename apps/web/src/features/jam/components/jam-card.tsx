@@ -1,89 +1,114 @@
 import { toast } from "sonner";
-import { Clock } from "lucide-react";
+import { Activity, Clock, Trash2, Radio, Terminal } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-
-import { api } from "@/lib/api";
-import { getJamQuery } from "../query/get-jam-query";
 import { Link } from "@tanstack/react-router";
 
+import { Button } from "@/components/ui/button";
+import { api } from "@/lib/api";
+import { getJamQuery } from "../query/get-jam-query";
+
 interface JamCardProps {
-	id: string;
-	bgImage: string;
-	name: string;
-	description: string;
-	createdAt: Date;
+    id: string;
+    name: string;
+    description?: string; // Added to fill the void of the image
+    createdAt: Date | string; // Handled as string or Date
 }
 
-export function JamCard({
-	id,
-	bgImage,
-	name,
-	createdAt,
-}: JamCardProps) {
+export function JamCard({ id, name, description, createdAt }: JamCardProps) {
+    const queryClient = useQueryClient();
 
-	const queryClient = useQueryClient()
+    const deleteMutation = useMutation({
+        mutationFn: () => api.jam({ id }).delete(),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: getJamQuery.queryKey,
+                refetchType: "all",
+            });
+            toast.success("Station terminated successfully.");
+        },
+        onError: (error: any) => {
+            if (error?.response?.data?.error) {
+                toast.error(error.response.data.error);
+            } else if (error.status === 403) {
+                toast.error("Permission denied");
+            } else if (error.status === 404) {
+                toast.error("Station not found");
+            } else {
+                toast.error("Termination failed");
+            }
+        },
+    });
 
-	const deleteMutation = useMutation({
-		mutationFn: () => api.jam({ id }).delete(),
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: getJamQuery.queryKey, refetchType: "all" })
-			toast.success('Jam deleted')
-		},
-		onError: (error: any) => {
-			if (error?.response?.data?.error) {
-				toast.error(error.response.data.error)
-			} else if (error.status === 403) {
-				toast.error('Permission denied')
-			} else if (error.status === 404) {
-				toast.error('Jam not found')
-			} else {
-				toast.error('Delete failed')
-			}
-		}
-	})
-	const deleteJam = () => deleteMutation.mutate();
-	return (
-		<Card
-			className="bg-card shadow-sm hover:shadow-xl border border-border rounded-2xl w-64 h-80 overflow-hidden"
-		>
-			<div className="border-b w-full h-36">
-				<img
-					src={bgImage}
-					alt={name}
-					className="w-full h-full object-center object-cover"
-				/>
-			</div>
-			<CardContent className="flex flex-col justify-between p-4 min-h-[calc(100%-9rem)]">
-				<div className="space-y-1">
-					<h4 className="font-bold text-lg capitalize line-clamp-1 leading-tight">
-						{name}
-					</h4>
+    const deleteJam = () => deleteMutation.mutate();
 
-					<div className="flex items-center gap-2 text-muted-foreground text-xs">
-						<Clock className="w-4 h-4" />
-						<span>{createdAt.toDateString()}</span>
-					</div>
-				</div>
+    // Safely parse date for the mono display
+    const dateObj = new Date(createdAt);
+    const formattedDate = !isNaN(dateObj.getTime()) 
+        ? dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+        : 'UNKNOWN DATE';
 
-				<div className="flex flex-col gap-2">
-					<Link to="/jam/join/$jamId" params={{ jamId: id }}>
-						<Button className="rounded-lg w-full font-semibold">
-							Join
-						</Button>
-					</Link>
+    return (
+        <div className="group relative flex flex-col justify-between bg-card hover:bg-card/80 shadow-sm hover:shadow-primary/10 hover:shadow-xl p-6 border border-border/50 hover:border-primary/50 rounded-[2rem] w-full sm:w-64 h-[320px] overflow-hidden transition-all">
+            
+            {/* Top Bar: Status Indicator */}
+            <div className="flex justify-between items-center pb-4 border-border/50 border-b">
+                <div className="flex items-center gap-2 font-mono font-bold text-primary text-xs uppercase tracking-widest">
+                    <span className="relative flex w-2 h-2">
+                        <span className="inline-flex absolute bg-primary opacity-75 rounded-full w-full h-full animate-ping"></span>
+                        <span className="inline-flex relative bg-primary rounded-full w-2 h-2"></span>
+                    </span>
+                    LIVE NODE
+                </div>
+                <Radio className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
 
-					<button
-						onClick={deleteJam}
-						disabled={deleteMutation.isPending}
-						className="disabled:opacity-50 w-full font-medium text-destructive text-xs hover:underline transition"
-					>
-						{deleteMutation.isPending ? "Deleting…" : "Delete"}
-					</button>
-				</div>
-			</CardContent>
-		</Card>
-	);
+            {/* Middle: Station Details */}
+            <div className="flex flex-col flex-1 justify-start py-4">
+                <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+                    <Terminal className="w-4 h-4" />
+                    <span className="opacity-70 font-mono text-[10px] uppercase tracking-widest">
+                        ID: {id.slice(0, 8)}
+                    </span>
+                </div>
+                
+                <h4 className="mb-3 font-black text-foreground text-2xl uppercase line-clamp-2 leading-none tracking-tighter">
+                    {name}
+                </h4>
+                
+                {description && (
+                    <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
+                        {description}
+                    </p>
+                )}
+            </div>
+
+            {/* Bottom: Actions & Meta */}
+            <div className="flex flex-col gap-3 pt-4 border-border/50 border-t">
+                <div className="flex items-center gap-2 font-mono text-muted-foreground text-xs uppercase">
+                    <Clock className="w-3 h-3" />
+                    <span>Deployed: {formattedDate}</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                    <Link to="/jam/join/$jamId" params={{ jamId: id }} className="flex-1">
+                        <Button className="bg-primary hover:opacity-90 rounded-xl w-full font-bold text-primary-foreground active:scale-95 transition-all">
+                            <Activity className="mr-2 w-4 h-4" />
+                            CONNECT
+                        </Button>
+                    </Link>
+
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={deleteJam}
+                        disabled={deleteMutation.isPending}
+                        className="hover:bg-destructive/10 border border-border hover:border-destructive/30 rounded-xl hover:text-destructive transition-all shrink-0"
+                        title="Terminate Station"
+                    >
+                        <Trash2 className="w-4 h-4" />
+                    </Button>
+                </div>
+            </div>
+        </div>
+    );
 }
