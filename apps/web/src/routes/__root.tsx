@@ -51,7 +51,7 @@ function RootComponent() {
 					<Header />
 					<Outlet />
 				</div>
-				<Toaster richColors />
+				<Toaster duration={200} position="top-right" />
 			</ThemeProvider>
 			{/* <TanStackRouterDevtools position="bottom-left" /> */}
 		</>
