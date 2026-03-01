@@ -20,7 +20,6 @@ export const useJamSocket = (jamId: string) => {
         });
 
         socket.on("message", (event) => {
-            console.log("New Message:", event.data);
             setLastMessage(event.data);
         });
 
