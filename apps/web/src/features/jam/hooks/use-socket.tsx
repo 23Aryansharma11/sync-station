@@ -27,8 +27,6 @@ export function useSocket(jamId: string, currentUserId: string) {
   const [sessionEnded, setSessionEnded] = useState(false);
   const [wasKicked, setWasKicked] = useState(false);
 
-  // --- STICKY PLAYING SONG REF --- //
-  // This securely tracks what is playing to prevent it from being overtaken by likes
   const playingSongIdRef = useRef<string | null>(null);
 
   const stableSort = useCallback((unsortedQueue: Song[]) => {
@@ -36,28 +34,20 @@ export function useSocket(jamId: string, currentUserId: string) {
           playingSongIdRef.current = null;
           return [];
       }
-
-      // 1. Determine normal "highest likes -> oldest time" order
       const normalSort = [...unsortedQueue].sort((a, b) => b.likes - a.likes || a.addedAt - b.addedAt);
 
-      // 2. If no song is currently locked, lock the top one automatically
       if (!playingSongIdRef.current) {
           playingSongIdRef.current = normalSort[0].id;
           return normalSort;
       }
 
-      // 3. Find if our locked song is still in the queue
       const lockedSong = unsortedQueue.find(s => s.id === playingSongIdRef.current);
 
-      // 4. If the locked song was removed (e.g., song ended naturally or admin deleted it),
-      // we release the lock and latch onto the next best song.
       if (!lockedSong) {
           playingSongIdRef.current = normalSort[0].id;
           return normalSort;
       }
 
-      // 5. If the locked song is still here, pull it out, sort the remaining tracks normally,
-      // and forcefully stick the locked song back at the top.
       const others = unsortedQueue.filter(s => s.id !== playingSongIdRef.current);
       others.sort((a, b) => b.likes - a.likes || a.addedAt - b.addedAt);
 

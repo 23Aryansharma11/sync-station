@@ -241,7 +241,6 @@ export const wsRoutes = new Elysia()
                             break;
                         }
 
-                        // NEW: Unblock a user
                         case "unblock-user": {
                             if (!isAdmin) return;
                             const targetUserId = message.data.userId;
