@@ -3,7 +3,7 @@ import { ExternalLink, Trash2, Music, User, Flame } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import type { Song } from "@/features/jam/hooks/use-jam-queue"; 
+import type { Song } from "@/features/jam/hooks/use-socket"; 
 
 interface SongCardProps {
   song: Song;

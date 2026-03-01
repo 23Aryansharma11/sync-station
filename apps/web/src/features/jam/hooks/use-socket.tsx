@@ -19,7 +19,7 @@ export type ActiveUser = {
   avatar: string;
 };
 
-export function useJamQueue(jamId: string, currentUserId: string) {
+export function useSocket(jamId: string, currentUserId: string) {
   const { isConnected, lastMessage, sendMessage } = useJamSocket(jamId);
   const [queue, setQueue] = useState<Song[]>([]);
   const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);

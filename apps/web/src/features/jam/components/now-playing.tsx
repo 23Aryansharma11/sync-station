@@ -1,6 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Music, Radio, VolumeX } from "lucide-react";
-import type { Song } from "@/features/jam/hooks/use-jam-queue"; 
+import type { Song } from "@/features/jam/hooks/use-socket"; 
 
 interface NowPlayingProps {
   currentSong?: Song;

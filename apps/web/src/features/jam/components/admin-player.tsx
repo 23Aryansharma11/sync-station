@@ -3,7 +3,7 @@ import YouTube, { type YouTubeProps, type YouTubeEvent } from "react-youtube";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play, Pause, Radio, SkipForward, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { Song } from "@/features/jam/hooks/use-jam-queue"; 
+import type { Song } from "@/features/jam/hooks/use-socket"; 
 
 interface AdminPlayerProps {
   currentSong?: Song;

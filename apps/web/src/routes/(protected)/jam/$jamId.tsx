@@ -8,7 +8,7 @@ import { Radio, Activity, Signal, SignalZero, ListMusic, ShieldAlert, Users, Pow
 import { api } from "@/lib/api";
 import { requireAuth } from "@/lib/auth-loader";
 import { authClient } from "@/lib/auth-client";
-import { useJamQueue } from "@/features/jam/hooks/use-jam-queue";
+import { useSocket } from "@/features/jam/hooks/use-socket";
 import { getJamQuery } from "@/features/jam/query/get-jam-query";
 
 import { AddMusicDrawer } from "@/features/jam/components/add-music-form";
@@ -151,7 +151,7 @@ function JamRoom() {
 
   const isAdmin = Boolean(currentUserId && jam && (jam as any).authorId === currentUserId);
 
-  const { queue, activeUsers, bannedUsers, isConnected, sessionEnded, wasKicked, toggleLike, removeSong, endSession, kickUser, unblockUser } = useJamQueue(jamId, currentUserId);
+  const { queue, activeUsers, bannedUsers, isConnected, sessionEnded, wasKicked, toggleLike, removeSong, endSession, kickUser, unblockUser } = useSocket(jamId, currentUserId);
 
   // Hard Redirects for Booted / Ended Sessions
   useEffect(() => {
