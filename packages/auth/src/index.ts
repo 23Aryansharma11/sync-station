@@ -9,7 +9,7 @@ export const auth = betterAuth({
 	}),
 	trustedOrigins: [env.CORS_ORIGIN],
 	emailAndPassword: {
-		enabled: true,
+		enabled: false,
 	},
 	advanced: {
 		defaultCookieAttributes: {
