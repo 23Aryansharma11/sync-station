@@ -144,7 +144,6 @@ export const jamRoutes = new Elysia({ prefix: "/jam" })
     const { id } = params;
     const { lat, lon } = body;
     
-    // UPDATED: Check Hash for blocked user
     const isBanned = await redis.hexists(`jam:${id}:blocked`, session.user.id);
     if (isBanned) {
       throw new Error("ACCESS DENIED: You have been blocked by the Operator.");

@@ -126,7 +126,6 @@ export const wsRoutes = new Elysia()
 
                     if (!userId) return;
 
-                    // Double check block status
                     const isBanned = await redis.hexists(`jam:${jamId}:blocked`, String(userId));
                     if (isBanned) {
                         ws.send({ type: "user-kicked", data: { userId: String(userId) } });
@@ -195,7 +194,7 @@ export const wsRoutes = new Elysia()
                             const exists = await redis.hexists(`jam:${jamId}:songs`, cleanLink);
                             if (exists) return;
                             const { title, thumbnail } = await getYoutubeData(cleanLink);
-                            const addedAt = Date.now();
+                            const addedAt = Date.now(); 
                             await redis.hset(`jam:${jamId}:songs`, cleanLink, JSON.stringify({ name: String(name), avatar: String(avatar), addedAt, title, thumbnail }));
                             ws.publish(jamId, { type: "add-music", data: { ytLink: cleanLink, name: String(name), avatar: String(avatar), title, thumbnail, addedAt } });
                             break;
@@ -225,15 +224,11 @@ export const wsRoutes = new Elysia()
                         case "kick-user": {
                             if (!isAdmin) return;
                             const targetUserId = message.data.userId;
-
-                            // 1. Get user details before removing
                             const userData = await redis.hget(`jam:${jamId}:users`, targetUserId);
                             if (userData) {
-                                // 2. Add to blocked hash
                                 await redis.hset(`jam:${jamId}:blocked`, targetUserId, userData);
                             }
 
-                            // 3. Remove from active
                             await redis.hdel(`jam:${jamId}:users`, targetUserId);
 
                             ws.publish(jamId, { type: "user-kicked", data: { userId: targetUserId } });
